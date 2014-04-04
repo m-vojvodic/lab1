@@ -181,11 +181,11 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
   int current = 0;
   char* comment = NULL;
 
+  comment = (char*) checked_malloc(size * sizeof(char));
+  comment[current++] = '#';
+
   if(next_byte != EOF)
-  {
-    comment = (char*) checked_malloc(size * sizeof(char));
-    comment[current++] = '#';
-      
+  {      
     while(next_byte != '\n')
     {
       if(current == size)
@@ -197,11 +197,16 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
       next_byte = get_next_byte(get_next_byte_arg);
     }
   }
-  else // # is last comment
+
+  if(current == size)
   {
-    
+    size += 1;
+    word = (char*) checked_realloc(size * sizeof(char));
   }
-  return new_token; //is this correct?
+  
+  comment[current++] = '\0';
+
+  return comment;
 }
 
 token_stream* make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg)
