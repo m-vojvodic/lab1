@@ -39,10 +39,10 @@ typedef struct token_stream
 
 /*struct command_stream
 {
-	command_t *cmd_stream; //pointer to beginning of stream
-	int num_commands; //number of command in the array
-	int curr_index; //the index of the current command
-	int size; //the total size of the array, changes with reallocation
+  command_t *cmd_stream; //pointer to beginning of stream
+  int num_commands; //number of command in the array
+  int curr_index; //the index of the current command
+  int size; //the total size of the array, changes with reallocation
 }*/
 
 typedef struct command_node
@@ -207,6 +207,113 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
   comment[current++] = '\0';
 
   return comment;
+}
+
+token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
+{
+  int next_byte = get_next_byte(get_next_byte_arg);
+  token *new_token;
+  while(next_byte == ' ' || next_byte == '\t')
+  {
+    next_byte = get_next_byte(get_next_byte_arg);
+  }
+  
+  switch(next_byte):
+  {
+    case '&':
+      next_byte = get_next_byte(get_next_byte_arg);
+      if(next_byte == '&')
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = AND;
+	new_token->next = NULL;
+	new_token->word = NULL; //do we need to store a word for special characters?
+      }
+      else
+      {
+	//return error; need to implement way of keeping track of the line number
+      }
+      break;
+    case '|':
+      next_byte = get_next_byte(get_next_byte_arg);
+      if(next_byte == '|')
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = OR;
+	new_token->next = NULL;
+	new_token->word = NULL; //do we need to store a word for special characters?
+      }
+      else
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = PIPE;
+	new_token->next = NULL;
+	new_token->word = NULL;
+      }
+      break;
+    case '(':  //complicated
+      break;
+    case ')':  //complicated
+      break;
+    case ';':
+      new_token = (token*) checked_malloc(sizeof(token));
+      new_token->type = SEMICOLON;
+      new_token->next = NULL;
+      new_token->word = NULL;
+      break;
+    case '>':
+      next_byte = get_next_byte(get_next_byte_arg);
+      if(next_byte != '\n')
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = OUTPUT;
+	new_token->next = NULL;
+	new_token->word = NULL;
+      }
+      else
+      {
+	//print error
+      }
+      break;
+    case '<':
+      next_byte = get_next_byte(get_next_byte_arg);
+      if(next_byte != '\n')
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = INPUT;
+	new_token->next = NULL;
+	new_token->word = NULL;
+      }
+      break;
+    case '\n':
+      next_byte = get_next_byte(get_next_byte_arg);
+      if(next_byte == '(' || next_byte == ')' || is_word(next_byte)) //need to include whitespace and newlines?
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = NEWLINE;
+	new_token->next = NULL;
+	new_token->word = NULL;
+      }
+      else
+      {
+	//print out error
+      }
+      break;
+    default:
+      //now words and comments (?) are processed
+      if(is_word(next_byte))
+      {
+	new_token = (token*) checked_malloc(sizeof(token));
+	new_token->type = WORD;
+	new_token->next = NULL;
+	new_token->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
+      }
+      else
+      {
+	//will be a comment?
+      }
+  }
+  return new_token; //is this correct?
 }
 
 token_stream* make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg)
