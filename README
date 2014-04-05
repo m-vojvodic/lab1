@@ -2,3 +2,13 @@ This is a skeleton for CS 111 Lab 1.
 
 Replace this README file with notes on your implementation.
 Mentions any special features or limitations.
+
+TODO:
+- write function to free tokens in token_stream.
+- review operator_stack implementation for correctness.
+- review command_stack implementation for correctness.
+- write combine command function (used in two stack implementation).
+- add helpful comments to code.
+- review EOF parsing (currently parsed as \n).
+- write an actual README file with actual notes on the ACTUAL program.
+- add more test cases for make_token_stream.
