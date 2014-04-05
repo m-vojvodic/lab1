@@ -13,10 +13,10 @@ typedef enum command_type* command_type_t;
 int precedence(command_type_t op);
 int is_word(int token);
 char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch);
-int is_comment(int token);
 char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg);
 struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg);
 struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg);
+void free_token_stream(struct token_stream stream);
 command_stream_t make_command_stream (int (*get_next_byte) (void *), void *get_next_byte_argument);
 command_t read_command_stream (command_stream_t s);
 

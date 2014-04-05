@@ -120,5 +120,7 @@ main (int argc, char **argv)
       }
       current = current->next;
     }
-    return 0;
+	free_token_stream(tokens);
+  	fclose(script_stream);
+	return 0;
 }

@@ -72,11 +72,8 @@ int precedence(command_type_t op)
   return 0;
 }
 */
-/*static int get_byte(int (*get_next_byte) (void *), void *get_next_byte_arg)
-{
-	return get_next_byte(get_next_byte_arg);
-}*/
 
+//checks if the next byte is a valid character for a word
 int is_word(int token)
 {
   if((token >= '0' && token <= '9') || (token >= 'a' && token <= 'z') ||
@@ -89,6 +86,7 @@ int is_word(int token)
     return 0;
 }
 
+//creates and returns a char array to be used as a token for commands or file names
 char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch)
 {
   int next_byte = get_next_byte(get_next_byte_arg);
@@ -125,15 +123,7 @@ char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first
   return word;
 }
 
-
-int is_comment(int token)
-{
-  if(token == '#')
-    return 1;
-  else
-    return 0;
-}
-
+//creates and returns a char array comprised of an entire line following '#'
 char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
 {
   int next_byte = get_next_byte(get_next_byte_arg);
@@ -332,6 +322,42 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
   fprintf(stdout, "Lines: %d\n", line_number-1);
   return tokens;
 }
+
+void free_token_stream(struct token_stream stream)
+{
+	if(stream.head == NULL) //empty list
+	{
+		return;
+	}
+	struct token* current = stream.head;
+	if(current->next == NULL) //one token in list
+	{
+		if(current->word != NULL)
+		{
+			free(current->word);
+		}
+		free(current);
+		return;
+	}
+	struct token* next_token = current->next;
+	while(next_token != NULL) //regular case
+	{
+		if(current->word != NULL)
+		{
+			free(current->word);
+		}
+		free(current);
+		current = next_token;
+		next_token = current->next;
+	}
+	if(current->word != NULL) //removes last token
+	{
+		free(current->word);
+	}
+	free(current);
+	return;
+}
+
 /*
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
