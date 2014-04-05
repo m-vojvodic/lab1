@@ -1,5 +1,6 @@
 // UCLA CS 111 Lab 1 command reading
 
+#include "stdio.h"
 #include "command.h"
 #include "command-internals.h"
 #include "alloc.h"
@@ -8,55 +9,7 @@
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
 
-enum token_type
-{
-  AND,
-  OR,
-  PIPE,
-  SEMICOLON,
-  LEFT_PAREN,
-  RIGHT_PAREN,
-  INPUT,
-  OUTPUT,
-  WORD,
-  COMMENT,
-  NEWLINE,
-  ENDOFFILE,
-};
-
-typedef struct token
-{
-  enum token_type type;
-  char *word;
-  struct token *next;
-}token;
-
-typedef struct token_stream
-{
-  token *head;
-  token *tail;
-}token_stream;
-
-/*struct command_stream
-{
-  command_t *cmd_stream; //pointer to beginning of stream
-  int num_commands; //number of command in the array
-  int curr_index; //the index of the current command
-  int size; //the total size of the array, changes with reallocation
-}*/
-
-typedef struct command_node
-{
-  struct command_t *command;
-  struct command_node *next;
-}command_node;
-
-typedef struct command_stream
-{
-  command_node *head;
-  command_node *tail;
-}command_stream;
-
+/*
 typedef struct command_stack_node
 {
   command_t *cmd;
@@ -95,8 +48,9 @@ command_node insert_command_node (command_node *tail, command_t cmd)
   tail->next = node;
   tail = node;
 }
-
-int precedence(enum command_type op)
+*/
+/*
+int precedence(command_type_t op)
 {
   switch(op)
   {
@@ -112,14 +66,15 @@ int precedence(enum command_type op)
     default:
       return -1;
   }
+  return 0;
 }
-
+*/
 /*static int get_byte(int (*get_next_byte) (void *), void *get_next_byte_arg)
 {
 	return get_next_byte(get_next_byte_arg);
 }*/
 
-static int is_word(int token)
+int is_word(int token)
 {
   if((token >= '0' && token <= '9') || (token >= 'a' && token <= 'z') ||
      (token >= 'A' && token <= 'Z') || token == '!' || token == '%'   || 
@@ -131,7 +86,7 @@ static int is_word(int token)
     return 0;
 }
 
-static char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch)
+char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch)
 {
   int next_byte = get_next_byte(get_next_byte_arg);
   int size = 10;
@@ -148,7 +103,7 @@ static char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, in
       if(current == size)
       {
 	size *= 2;
-	word = (char*) checked_realloc(size * sizeof(char));
+	word = (char*) checked_realloc(word, size * sizeof(char));
       }
       word[current++] = (char) next_byte;
       next_byte = get_next_byte(get_next_byte_arg);
@@ -158,7 +113,7 @@ static char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, in
   if(current == size)
   {
     size += 1;
-    word = (char*) checked_realloc(size * sizeof(char));
+    word = (char*) checked_realloc(word, size * sizeof(char));
   }
   
   word[current++] = '\0';
@@ -166,7 +121,7 @@ static char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, in
 }
 
 
-static int is_comment(int token)
+int is_comment(int token)
 {
   if(token == '#')
     return 1;
@@ -174,7 +129,7 @@ static int is_comment(int token)
     return 0;
 }
 
-static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
+char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
 {
   int next_byte = get_next_byte(get_next_byte_arg);
   int size = 10;
@@ -191,7 +146,7 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
       if(current == size)
       {
         size *= 2;
-        comment = (char*) checked_realloc(size * sizeof(char));
+        comment = (char*) checked_realloc(comment, size * sizeof(char));
       }
       comment[current++] = (char) next_byte;
       next_byte = get_next_byte(get_next_byte_arg);
@@ -201,7 +156,7 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
   if(current == size)
   {
     size += 1;
-    word = (char*) checked_realloc(size * sizeof(char));
+    comment = (char*) checked_realloc(comment, size * sizeof(char));
   }
   
   comment[current++] = '\0';
@@ -209,25 +164,25 @@ static char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
   return comment;
 }
 
-token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
+struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
 {
   int next_byte = get_next_byte(get_next_byte_arg);
-  token *new_token;
+  struct token* new_token;
   while(next_byte == ' ' || next_byte == '\t')
   {
     next_byte = get_next_byte(get_next_byte_arg);
   }
   
-  switch(next_byte):
+  switch(next_byte)
   {
     case '&':
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte == '&')
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = AND;
-	new_token->next = NULL;
-	new_token->word = NULL; //do we need to store a word for special characters?
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = AND;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL; //do we need to store a word for special characters?
       }
       else
       {
@@ -238,37 +193,45 @@ token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte == '|')
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = OR;
-	new_token->next = NULL;
-	new_token->word = NULL; //do we need to store a word for special characters?
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = OR;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL; //do we need to store a word for special characters?
       }
       else
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = PIPE;
-	new_token->next = NULL;
-	new_token->word = NULL;
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = PIPE;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL;
       }
       break;
     case '(':  //complicated
+      new_token = (struct token*)checked_malloc(sizeof(struct token));
+      (new_token)->type = LEFT_PAREN;
+      (new_token)->next = NULL;
+      (new_token)->word = NULL;
       break;
     case ')':  //complicated
+      new_token = (struct token*)checked_malloc(sizeof(struct token));
+      (new_token)->type = RIGHT_PAREN;
+      (new_token)->next = NULL;
+      (new_token)->word = NULL;
       break;
     case ';':
-      new_token = (token*) checked_malloc(sizeof(token));
-      new_token->type = SEMICOLON;
-      new_token->next = NULL;
-      new_token->word = NULL;
+      new_token = (struct token*)checked_malloc(sizeof(struct token));
+      (new_token)->type = SEMICOLON;
+      (new_token)->next = NULL;
+      (new_token)->word = NULL;
       break;
     case '>':
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte != '\n')
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = OUTPUT;
-	new_token->next = NULL;
-	new_token->word = NULL;
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = OUTPUT;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL;
       }
       else
       {
@@ -279,20 +242,21 @@ token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte != '\n')
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = INPUT;
-	new_token->next = NULL;
-	new_token->word = NULL;
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = INPUT;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL;
       }
       break;
     case '\n':
       next_byte = get_next_byte(get_next_byte_arg);
-      if(next_byte == '(' || next_byte == ')' || is_word(next_byte)) //need to include whitespace and newlines?
+      if(next_byte == '(' || next_byte == ')' || next_byte == '\n' ||
+	 is_word(next_byte)) //need to include whitespace and newlines?
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = NEWLINE;
-	new_token->next = NULL;
-	new_token->word = NULL;
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = NEWLINE;
+	(new_token)->next = NULL;
+	(new_token)->word = NULL;
       }
       else
       {
@@ -303,48 +267,59 @@ token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg)
       //now words and comments (?) are processed
       if(is_word(next_byte))
       {
-	new_token = (token*) checked_malloc(sizeof(token));
-	new_token->type = WORD;
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	(new_token)->type = WORD;
+	(new_token)->next = NULL;
+	(new_token)->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
+      }
+      else if(next_byte == '#')
+      {
+	//will be a comment?
+	new_token = (struct token*)checked_malloc(sizeof(struct token));
+	new_token->type = COMMENT;
 	new_token->next = NULL;
-	new_token->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
+	new_token->word = get_comment(get_next_byte, get_next_byte_arg);
       }
       else
       {
-	//will be a comment?
+	// error
       }
   }
   return new_token; //is this correct?
 }
 
-token_stream* make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg)
+struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg)
 {
-  token_stream* tokens;
-  token* current_token = get_next_token(get_next_byte, get_next_byte_arg);
-  token* next_token = NULL;
-  if(current_token == NULL) // what case is this for?
-    return NULL;
-  tokens->head = current_token;
-  tokens->tail = current_token;
+  struct token_stream tokens;
+  tokens.head = NULL;
+  tokens.tail = NULL;
+  struct token* current_token = get_next_token(get_next_byte, get_next_byte_arg);
+  struct token* next_token;
 
-  while(current_token->type != ENDOFFILE)
+  tokens.head = current_token;
+  tokens.tail = current_token;
+
+  while((current_token)->next != NULL)
   {
     next_token = get_next_token(get_next_byte, get_next_byte_arg);
-    current_token->next = next_token;
-    tokens->tail = next_token;    
+    (current_token)->next = next_token; // dereferencing?????
+    tokens.tail = next_token;    
     current_token = next_token;
   }
-  tail->next = NULL;
+  (tokens.tail)->next = NULL;
 
   return tokens;
 }
-
+/*
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
 		     void *get_next_byte_argument)
 {
-  /* FIXME: Replace this with your implementation.  You may need to
-     add auxiliary functions and otherwise modify the source code.
-     You can also use external functions defined in the GNU C Library.  */
+  // FIXME: Replace this with your implementation.  You may need to
+  // add auxiliary functions and otherwise modify the source code.
+  // You can also use external functions defined in the GNU C Library.  
+  // need to create a combine_command function
+  // command/operator stack
   error (1, 0, "command reading not yet implemented");
   return 0;
 }
@@ -352,7 +327,8 @@ make_command_stream (int (*get_next_byte) (void *),
 command_t
 read_command_stream (command_stream_t s)
 {
-  /* FIXME: Replace this with your implementation too.  */
+  // FIXME: Replace this with your implementation too.  
   error (1, 0, "command reading not yet implemented");
   return 0;
 }
+*/

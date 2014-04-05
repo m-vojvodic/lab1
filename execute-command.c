@@ -5,6 +5,8 @@
 
 #include <error.h>
 
+#include <stdio.h>
+
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
 
@@ -20,5 +22,11 @@ execute_command (command_t c, bool time_travel)
   /* FIXME: Replace this with your implementation.  You may need to
      add auxiliary functions and otherwise modify the source code.
      You can also use external functions defined in the GNU C Library.  */
+  int i = c->status;;
+  bool yolo = time_travel;
+  if(yolo)
+    printf("yolo\n");
+  if(i)
+    printf("%d\n", i);
   error (1, 0, "command execution not yet implemented");
 }

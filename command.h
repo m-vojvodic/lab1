@@ -2,8 +2,26 @@
 
 #include <stdbool.h>
 
-typedef struct command *command_t;
-typedef struct command_stream *command_stream_t;
+typedef struct command* command_t;
+typedef struct command_stream* command_stream_t;
+/*typedef struct token* token_t;
+typedef struct token_stream* token_stream_t;*/
+typedef struct command_node* command_node_t;
+typedef struct command_stream* command_stream_t;
+typedef enum command_type* command_type_t;
+
+int precedence(command_type_t op);
+int is_word(int token);
+char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch);
+int is_comment(int token);
+char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg);
+struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_arg);
+struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg);
+command_stream_t make_command_stream (int (*get_next_byte) (void *), void *get_next_byte_argument);
+command_t read_command_stream (command_stream_t s);
+
+
+
 
 /* Create a command stream from GETBYTE and ARG.  A reader of
    the command stream will invoke GETBYTE (ARG) to get the next byte.

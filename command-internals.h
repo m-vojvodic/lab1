@@ -10,6 +10,22 @@ enum command_type
     SUBSHELL_COMMAND,    // ( A )
   };
 
+enum token_type
+  {
+    AND,
+    OR,
+    PIPE,
+    SEMICOLON,
+    LEFT_PAREN,
+    RIGHT_PAREN,
+    INPUT,
+    OUTPUT,
+    WORD,
+    COMMENT,
+    NEWLINE,
+    ENDOFFILE,
+  };
+
 // Data associated with a command.
 struct command
 {
@@ -33,4 +49,37 @@ struct command
     // for SUBSHELL_COMMAND:
     struct command *subshell_command;
   } u;
+};
+
+struct token
+{
+  enum token_type type;
+  char* word;
+  struct token *next;
+};
+
+struct token_stream
+{
+  struct token *head;
+  struct token *tail;
+};
+
+/*struct command_stream
+{
+  command_t *cmd_stream; //pointer to beginning of stream
+  int num_commands; //number of command in the array
+  int curr_index; //the index of the current command
+  int size; //the total size of the array, changes with reallocation
+}*/
+
+struct command_node
+{
+  struct command_t *command;
+  struct command_node *next;
+};
+
+struct command_stream
+{
+  struct command_node *head;
+  struct command_node *tail;
 };
