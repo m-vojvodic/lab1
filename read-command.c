@@ -1,10 +1,13 @@
 // UCLA CS 111 Lab 1 command reading
 
+#include "stdlib.h"
 #include "stdio.h"
 #include "command.h"
 #include "command-internals.h"
 #include "alloc.h"
 #include <error.h>
+
+static int line_number = 1;
 
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
@@ -110,6 +113,8 @@ char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first
     }
   }
   
+  ungetc(next_byte, get_next_byte_arg);
+
   if(current == size)
   {
     size += 1;
@@ -153,6 +158,8 @@ char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg)
     }
   }
 
+  ungetc(next_byte, get_next_byte_arg);
+
   if(current == size)
   {
     size += 1;
@@ -186,7 +193,8 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
       }
       else
       {
-	//return error; need to implement way of keeping track of the line number
+	fprintf(stderr, "%d: Invalid syntax\n", line_number);
+	exit(1);
       }
       break;
     case '|':
@@ -204,15 +212,16 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	(new_token)->type = PIPE;
 	(new_token)->next = NULL;
 	(new_token)->word = NULL;
+	ungetc(next_byte, get_next_byte_arg); // decrement filestream ptr
       }
       break;
-    case '(':  //complicated
+    case '(':
       new_token = (struct token*)checked_malloc(sizeof(struct token));
       (new_token)->type = LEFT_PAREN;
       (new_token)->next = NULL;
       (new_token)->word = NULL;
       break;
-    case ')':  //complicated
+    case ')':
       new_token = (struct token*)checked_malloc(sizeof(struct token));
       (new_token)->type = RIGHT_PAREN;
       (new_token)->next = NULL;
@@ -232,10 +241,12 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	(new_token)->type = OUTPUT;
 	(new_token)->next = NULL;
 	(new_token)->word = NULL;
+	ungetc(next_byte, get_next_byte_arg); // return the byte read
       }
-      else
+      else // invalid syntax
       {
-	//print error
+	fprintf(stderr, "%d: Invalid syntax\n", line_number);
+	exit(1);
       }
       break;
     case '<':
@@ -249,19 +260,33 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
       }
       break;
     case '\n':
-      next_byte = get_next_byte(get_next_byte_arg);
-      if(next_byte == '(' || next_byte == ')' || next_byte == '\n' ||
-	 is_word(next_byte)) //need to include whitespace and newlines?
+      //      next_byte = get_next_byte(get_next_byte_arg);
+      //      if(next_byte == '(' || next_byte == ')' || next_byte == '\n' ||
+      //	 is_word(next_byte)) //need to include whitespace and newlines?
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
 	(new_token)->type = NEWLINE;
 	(new_token)->next = NULL;
 	(new_token)->word = NULL;
+	line_number++;
       }
-      else
+      //      else
       {
 	//print out error
       }
+      break;
+    case EOF:
+      new_token = (struct token*)checked_malloc(sizeof(struct token));
+      new_token->type = ENDOFFILE;
+      new_token->next = NULL;
+      new_token->word = NULL;
+      break;
+    case '#':
+      //will be a comment?
+      new_token = (struct token*)checked_malloc(sizeof(struct token));
+      new_token->type = COMMENT;
+      new_token->next = NULL;
+      new_token->word = get_comment(get_next_byte, get_next_byte_arg);
       break;
     default:
       //now words and comments (?) are processed
@@ -272,18 +297,13 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	(new_token)->next = NULL;
 	(new_token)->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
       }
-      else if(next_byte == '#')
-      {
-	//will be a comment?
-	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	new_token->type = COMMENT;
-	new_token->next = NULL;
-	new_token->word = get_comment(get_next_byte, get_next_byte_arg);
-      }
       else
       {
+	fprintf(stderr, "%d: Invalid syntax\n", line_number);
+	exit(1);
 	// error
       }
+      break;
   }
   return new_token; //is this correct?
 }
@@ -299,8 +319,9 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
   tokens.head = current_token;
   tokens.tail = current_token;
 
-  while((current_token)->next != NULL)
+  while((current_token)->type != ENDOFFILE)
   {
+    fprintf(stdout, "TOKEN %d FOUND\n", current_token->type);
     next_token = get_next_token(get_next_byte, get_next_byte_arg);
     (current_token)->next = next_token; // dereferencing?????
     tokens.tail = next_token;    
@@ -308,6 +329,7 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
   }
   (tokens.tail)->next = NULL;
 
+  fprintf(stdout, "Lines: %d\n", line_number-1);
   return tokens;
 }
 /*

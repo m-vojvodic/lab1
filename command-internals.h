@@ -12,18 +12,18 @@ enum command_type
 
 enum token_type
   {
-    AND,
-    OR,
-    PIPE,
-    SEMICOLON,
-    LEFT_PAREN,
-    RIGHT_PAREN,
-    INPUT,
-    OUTPUT,
-    WORD,
-    COMMENT,
-    NEWLINE,
-    ENDOFFILE,
+    AND, // 0
+    OR, // 1
+    PIPE, // 2
+    SEMICOLON, // 3
+    LEFT_PAREN, // 4
+    RIGHT_PAREN, // 5
+    INPUT, // 6
+    OUTPUT, // 7
+    WORD, // 8
+    COMMENT, // 9
+    NEWLINE, // 10
+    ENDOFFILE, // 11
   };
 
 // Data associated with a command.

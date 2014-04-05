@@ -75,7 +75,7 @@ main (int argc, char **argv)
 
   struct token_stream tokens = make_token_stream(get_next_byte, script_stream);
   struct token* current = tokens.head;
-  while(current->next != NULL)
+  while(current != NULL)
   {
     int i = 0;
     switch(current->type)
@@ -98,22 +98,27 @@ main (int argc, char **argv)
       case OUTPUT:
         fprintf(stdout, ">"); 
 	break;
-    case WORD:
-    case COMMENT:
-      while(current->word[i] != '\0')
-      {
-	fprintf(stdout, "%c", current->word[i]);
-	i++;
+      case LEFT_PAREN:
+        fprintf(stdout, "(");
+        break;
+      case RIGHT_PAREN:
+        fprintf(stdout, ")");
+        break;
+      case WORD:
+      case COMMENT:
+        while(current->word[i] != '\0')
+        {
+  	  fprintf(stdout, "%c", current->word[i]);
+	  i++;
+        }
+        break;
+      case NEWLINE:
+        fprintf(stdout, "\n");
+        break;
+      default:
+        break;
       }
-      break;
-    case NEWLINE:
-      fprintf(stdout, "\n");
-      break;
-    default:
-      break;
+      current = current->next;
     }
-    current = current->next;
-  }
-
-  return 0;
+    return 0;
 }
