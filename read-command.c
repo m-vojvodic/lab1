@@ -12,48 +12,86 @@ static int line_number = 1;
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
 
-/*
-typedef struct command_stack_node
+struct command_stack_node* push_command (struct command_stack *stack, struct token* tok, struct command* cmd)
 {
-  command_t *cmd;
-  command_stack_node* prev;
-}command_stack_node;
+  if((cmd == NULL && tok == NULL) || (cmd != NULL && tok != NULL))
+  {
+	fprintf(stderr, "Error in pushing to command stack.\n");
+	exit(1);	
+  }
 
-typedef struct command_stack
-{
-  command_node *top;
-  command_node *bottom;
-}command_stack;
+  struct command_stack_node* newtop = (struct command_stack_node*) checked_malloc(sizeof(struct command_stack_node));
 
-command_stack_node* push_command (command_stack_node *stack, command_t *cmd)
+  if(cmd != NULL && tok == NULL) //input is alread a command, just assign it to a stack node and push it onto the stack
+  {
+	newtop->cmd = cmd;
+	newtop->prev = stack->top;
+	stack->top = newtop;
+  }
+  else if(cmd == NULL && tok != NULL)  //input is a token and needs to be converted into a command within a command_stack_node
+  {	
+	int current_word = 0;
+	if(tok->type == WORD)
+	{
+  	  newtop->cmd = (struct command*) checked_malloc(sizeof(struct command));
+	  newtop->cmd->type = SIMPLE_COMMAND;
+	  newtop->cmd->status = -1;
+	  newtop->cmd->input = NULL;
+	  newtop->cmd->output = NULL;
+	  newtop->cmd->u.word[current_word++] = tok->word;
+  	  newtop->prev = stack->top;
+  	  stack->top = newtop;
+	}
+	tok = tok->next;
+	while(tok->type == WORD)  //reads consecutive word commands if they exist
+	{
+	  newtop->cmd->u.word[current_word++] = tok->word;
+	  tok = tok->next;
+	}
+	newtop->cmd->u.word[current_word++] = '\0';
+  }
+  return stack->top;
+}
+
+//pop the top command off of the command stack
+struct command* pop_command (struct command_stack *stack)
 {
-  command_stack_node* newtop = (command_stack_node*) checked_malloc(sizeof(command_stack_node));
-  newtop->cmd = cmd;
+  struct command_stack_node *temp = stack->top;
+  struct command* cmd = temp->cmd;
+  stack->top = stack->top->prev;
+  free(temp);
+  return cmd;
+}
+
+struct operator_stack_node* push_operator(struct operator_stack* stack, struct token* tok)
+{
+  struct operator_stack_node* newtop = (struct operator_stack_node*) malloc(sizeof(struct operator_stack_node));
+  newtop->op = tok;
   newtop->prev = stack->top;
   stack->top = newtop;
   return stack->top;
 }
 
-command_t* pop_command (command_stack_node *stack)
+struct token* pop_operator (struct operator_stack *stack)
 {
-  command_stack_node *temp = stack->top;
-  top = top->prev;
-  cmd* val = temp->cmd;
+  struct operator_stack_node *temp = stack->top;
+  struct token* op = temp->op;
+  stack->top = stack->top->prev;
   free(temp);
-  return val;
+  return op;
 }
 
-command_node insert_command_node (command_node *tail, command_t cmd)
+
+/*struct command_node insert_command_node (struct command_node *tail, struct command cmd)
 {
-  command_node *node = (command_node*)checked_malloc(sizeof(command_node));
+  struct command_node *node = (struct command_node*)checked_malloc(sizeof(struct command_node));
   node->command = &cmd;
   node->next = NULL;
   tail->next = node;
   tail = node;
-}
-*/
-/*
-int precedence(command_type_t op)
+}*/
+
+int precedence(enum command_type op)
 {
   switch(op)
   {
@@ -71,7 +109,6 @@ int precedence(command_type_t op)
   }
   return 0;
 }
-*/
 
 //checks if the next byte is a valid character for a word
 int is_word(int token)
@@ -372,7 +409,7 @@ make_command_stream (int (*get_next_byte) (void *),
   return 0;
 }
 
-command_t
+command_t  //need to change to struct command
 read_command_stream (command_stream_t s)
 {
   // FIXME: Replace this with your implementation too.  

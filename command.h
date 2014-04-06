@@ -5,12 +5,12 @@
 typedef struct command* command_t;
 typedef struct command_stream* command_stream_t;
 /*typedef struct token* token_t;
-typedef struct token_stream* token_stream_t;*/
+typedef struct token_stream* token_stream_t;
 typedef struct command_node* command_node_t;
-typedef struct command_stream* command_stream_t;
+typedef struct command_stream* command_stream_t;*/
 typedef enum command_type* command_type_t;
 
-int precedence(command_type_t op);
+int precedence(enum command_type op);
 int is_word(int token);
 char* get_word(int (*get_next_byte) (void *), void *get_next_byte_arg, int first_ch);
 char* get_comment(int (*get_next_byte) (void *), void *get_next_byte_arg);

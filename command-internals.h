@@ -83,3 +83,28 @@ struct command_stream
   struct command_node *head;
   struct command_node *tail;
 };
+
+struct command_stack_node
+{
+  struct command* cmd;
+  struct command_stack_node* prev;
+};
+
+struct command_stack
+{
+  struct command_stack_node *top;
+  struct command_stack_node *bottom;
+};
+
+struct operator_stack_node
+{
+  struct token* op;
+  struct operator_stack_node* prev;
+};
+
+struct operator_stack
+{
+  struct operator_stack_node *top;
+  struct operator_stack_node *bottom;
+};
+
