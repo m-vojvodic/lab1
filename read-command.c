@@ -16,39 +16,44 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
 {
   if((cmd == NULL && tok == NULL) || (cmd != NULL && tok != NULL))
   {
-	fprintf(stderr, "Error in pushing to command stack.\n");
-	exit(1);	
+    fprintf(stderr, "Error in pushing to command stack.\n");
+    exit(1);	
   }
 
   struct command_stack_node* newtop = (struct command_stack_node*) checked_malloc(sizeof(struct command_stack_node));
 
-  if(cmd != NULL && tok == NULL) //input is alread a command, just assign it to a stack node and push it onto the stack
+  /* Input is alread a command, just assign it to a stack node and push it
+     onto the stack. */
+  if(cmd != NULL && tok == NULL)
   {
-	newtop->cmd = cmd;
-	newtop->prev = stack->top;
-	stack->top = newtop;
+    newtop->cmd = cmd;
+    newtop->prev = stack->top;
+    stack->top = newtop;
   }
-  else if(cmd == NULL && tok != NULL)  //input is a token and needs to be converted into a command within a command_stack_node
+
+  /* Input is a token and needs to be converted into a command within a
+     command_stack_node */
+  else if(cmd == NULL && tok != NULL)
   {	
-	int current_word = 0;
-	if(tok->type == WORD)
-	{
-  	  newtop->cmd = (struct command*) checked_malloc(sizeof(struct command));
-	  newtop->cmd->type = SIMPLE_COMMAND;
-	  newtop->cmd->status = -1;
-	  newtop->cmd->input = NULL;
-	  newtop->cmd->output = NULL;
-	  newtop->cmd->u.word[current_word++] = tok->word;
-  	  newtop->prev = stack->top;
-  	  stack->top = newtop;
-	}
-	tok = tok->next;
-	while(tok->type == WORD)  //reads consecutive word commands if they exist
-	{
-	  newtop->cmd->u.word[current_word++] = tok->word;
-	  tok = tok->next;
-	}
-	newtop->cmd->u.word[current_word++] = '\0';
+    int current_word = 0;
+    if(tok->type == WORD)
+    {
+      newtop->cmd = (struct command*) checked_malloc(sizeof(struct command));
+      newtop->cmd->type = SIMPLE_COMMAND;
+      newtop->cmd->status = -1;
+      newtop->cmd->input = NULL;
+      newtop->cmd->output = NULL;
+      newtop->cmd->u.word[current_word++] = tok->word;
+      newtop->prev = stack->top;
+      stack->top = newtop;
+    }
+    tok = tok->next;
+    while(tok->type == WORD)  //reads consecutive word commands if they exist
+    {
+      newtop->cmd->u.word[current_word++] = tok->word;
+      tok = tok->next;
+    }
+    newtop->cmd->u.word[current_word++] = '\0';
   }
   return stack->top;
 }
@@ -209,7 +214,7 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
   
   switch(next_byte)
   {
-    case '&':
+    case '&': // AND
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte == '&')
       {
@@ -224,50 +229,50 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	exit(1);
       }
       break;
-    case '|':
+    case '|': // PIPE or OR
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte == '|')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = OR;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL; //do we need to store a word for special characters?
+	new_token->type = OR;
+	new_token->next = NULL;
+	new_token->word = NULL; //do we need to store a word for special characters?
       }
       else
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = PIPE;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL;
+	new_token->type = PIPE;
+	new_token->next = NULL;
+	new_token->word = NULL;
 	ungetc(next_byte, get_next_byte_arg); // decrement filestream ptr
       }
       break;
-    case '(':
+    case '(': // LEFT_PAREN
       new_token = (struct token*)checked_malloc(sizeof(struct token));
-      (new_token)->type = LEFT_PAREN;
-      (new_token)->next = NULL;
-      (new_token)->word = NULL;
+      new_token->type = LEFT_PAREN;
+      new_token->next = NULL;
+      new_token->word = NULL;
       break;
-    case ')':
+    case ')': // RIGHT_PAREN
       new_token = (struct token*)checked_malloc(sizeof(struct token));
-      (new_token)->type = RIGHT_PAREN;
-      (new_token)->next = NULL;
-      (new_token)->word = NULL;
+      new_token->type = RIGHT_PAREN;
+      new_token->next = NULL;
+      new_token->word = NULL;
       break;
-    case ';':
+    case ';': // SEMICOLON
       new_token = (struct token*)checked_malloc(sizeof(struct token));
-      (new_token)->type = SEMICOLON;
-      (new_token)->next = NULL;
-      (new_token)->word = NULL;
+      new_token->type = SEMICOLON;
+      new_token->next = NULL;
+      new_token->word = NULL;
       break;
-    case '>':
+    case '>': // OUTPUT
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte != '\n')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = OUTPUT;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL;
+	new_token->type = OUTPUT;
+	new_token->next = NULL;
+	new_token->word = NULL;
 	ungetc(next_byte, get_next_byte_arg); // return the byte read
       }
       else // invalid syntax
@@ -276,63 +281,51 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	exit(1);
       }
       break;
-    case '<':
+    case '<': // INPUT
       next_byte = get_next_byte(get_next_byte_arg);
       if(next_byte != '\n')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = INPUT;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL;
+	new_token->type = INPUT;
+	new_token->next = NULL;
+	new_token->word = NULL;
       }
       break;
-    case '\n':
-      //      next_byte = get_next_byte(get_next_byte_arg);
-      //      if(next_byte == '(' || next_byte == ')' || next_byte == '\n' ||
-      //	 is_word(next_byte)) //need to include whitespace and newlines?
-      {
+    case '\n': // NEWLINE
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = NEWLINE;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL;
+	new_token->type = NEWLINE;
+	new_token->next = NULL;
+	new_token->word = NULL;
 	line_number++;
-      }
-      //      else
-      {
-	//print out error
-      }
       break;
-    case EOF:
+    case EOF: // ENDOFFILE
       new_token = (struct token*)checked_malloc(sizeof(struct token));
       new_token->type = ENDOFFILE;
       new_token->next = NULL;
       new_token->word = NULL;
       break;
-    case '#':
-      //will be a comment?
+    case '#': // COMMENT
       new_token = (struct token*)checked_malloc(sizeof(struct token));
       new_token->type = COMMENT;
       new_token->next = NULL;
       new_token->word = get_comment(get_next_byte, get_next_byte_arg);
       break;
-    default:
-      //now words and comments (?) are processed
+    default: //now WORDs are processed
       if(is_word(next_byte))
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = WORD;
-	(new_token)->next = NULL;
-	(new_token)->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
+	new_token->type = WORD;
+	new_token->next = NULL;
+	new_token->word = get_word(get_next_byte, get_next_byte_arg, next_byte);
       }
       else
       {
 	fprintf(stderr, "%d: Invalid syntax\n", line_number);
 	exit(1);
-	// error
       }
       break;
   }
-  return new_token; //is this correct?
+  return new_token;
 }
 
 struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_next_byte_arg)
@@ -348,10 +341,10 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
 
   while((current_token)->type != ENDOFFILE)
   {
-    fprintf(stdout, "TOKEN %d FOUND\n", current_token->type);
+    fprintf(stderr, "TOKEN %d FOUND\n", current_token->type); // for debugging
     next_token = get_next_token(get_next_byte, get_next_byte_arg);
-    (current_token)->next = next_token; // dereferencing?????
-    tokens.tail = next_token;    
+    (current_token)->next = next_token;
+    tokens.tail = next_token;
     current_token = next_token;
   }
   (tokens.tail)->next = NULL;
@@ -362,37 +355,37 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
 
 void free_token_stream(struct token_stream stream)
 {
-	if(stream.head == NULL) //empty list
-	{
-		return;
-	}
-	struct token* current = stream.head;
-	if(current->next == NULL) //one token in list
-	{
-		if(current->word != NULL)
-		{
-			free(current->word);
-		}
-		free(current);
-		return;
-	}
-	struct token* next_token = current->next;
-	while(next_token != NULL) //regular case
-	{
-		if(current->word != NULL)
-		{
-			free(current->word);
-		}
-		free(current);
-		current = next_token;
-		next_token = current->next;
-	}
-	if(current->word != NULL) //removes last token
-	{
-		free(current->word);
-	}
-	free(current);
-	return;
+  if(stream.head == NULL) //empty list
+  {
+    return;
+  }
+  struct token* current = stream.head;
+  if(current->next == NULL) //one token in list
+  {
+    if(current->word != NULL)
+    {
+      free(current->word);
+    }
+    free(current);
+    return;
+  }
+  struct token* next_token = current->next;
+  while(next_token != NULL) //regular case
+  {
+    if(current->word != NULL)
+    {
+      free(current->word);
+    }
+    free(current);
+    current = next_token;
+    next_token = current->next;
+  }
+  if(current->word != NULL) //removes last token
+  {
+    free(current->word);
+  }
+  free(current);
+  return;
 }
 
 /*
