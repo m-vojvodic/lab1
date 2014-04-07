@@ -4,11 +4,11 @@ Replace this README file with notes on your implementation.
 Mentions any special features or limitations.
 
 TODO:
-- review operator_stack implementation for correctness.
-- review command_stack implementation for correctness.
-- write combine command function (used in two stack implementation).
-- add helpful comments to code.
 - review EOF parsing (currently parsed as \n).
 - write an actual README file with actual notes on the ACTUAL program.
-- add more test cases for make_token_stream.
-- add more error checking in get_next_token (account for things like: ||| &&& &&| etc...)
+- add more test cases
+- error checking (empty stack, invalid token stream, etc)
+- command node --> tree root
+  * COMMENT, ENDOFFILE treated as their own command tree roots?
+- finish implementing logic
+- EAT FOOD!!!

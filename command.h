@@ -31,8 +31,11 @@ struct token* pop_operator (struct operator_stack *stack);
    command and return it. */
 struct command* combine_command(struct command* first, struct command* second, struct token* op);
 
+/* Process operators to create commands. */
+void process_operator(struct token* next_operator, struct command_stack* cmd_stack, struct operator_stack* op_stack);
+
 /* Evaluates operator precedence. */
-int precedence(enum command_type op);
+int precedence(enum token_type op);
 
 /* Evaluates if character is valid for words. */
 int is_word(int token);

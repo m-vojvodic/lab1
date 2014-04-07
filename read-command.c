@@ -137,21 +137,24 @@ struct command* combine_command(struct command* first, struct command* second, s
   tail = node;
 }*/
 
-int precedence(enum command_type op)
+int precedence(enum token_type op)
 {
   switch(op)
   {
-    case SEQUENCE_COMMAND:
+    case SEMICOLON:
+    case NEWLINE:
       return 0;
-    case AND_COMMAND:
-    case OR_COMMAND:
+    case AND:
+    case OR:
       return 1;
-    case PIPE_COMMAND:
+    case PIPE:
       return 2;
-    case SUBSHELL_COMMAND:
+    case LEFT_PAREN:
+    case RIGHT_PAREN:
       return 3;
     default:
-      return -1;
+      fprintf(stderr, "Error in precedence function!\n");
+      exit(1);
   }
   return 0;
 }
@@ -429,6 +432,40 @@ void free_token_stream(struct token_stream stream)
   return;
 }
 
+void process_operator(struct token* next_operator, struct command_stack* cmd_stack, struct operator_stack* op_stack)
+{
+  struct token* current_operator = NULL;
+  struct command* first_command = NULL;
+  struct command* second_command = NULL;
+  struct command* new_command = NULL;
+
+  if(op_stack->top == NULL) // if operator stack is empty
+  {
+    push_operator(op_stack, next_operator);
+  }
+  else
+  {
+    if(precedence(next_operator->type) > precedence(op_stack->top->op->type))
+    {
+       push_operator(op_stack, next_operator);
+    }
+    else
+    {
+      while((op_stack->top->op->type) != LEFT_PAREN ||
+	    precedence(next_operator->type) <= precedence(op_stack->top->op->type))
+      {
+	current_operator = pop_operator(op_stack);
+	second_command = pop_command(cmd_stack);
+	first_command = pop_command(cmd_stack);
+	new_command = combine_command(first_command, second_command, current_operator);
+	push_command(cmd_stack, NULL, new_command);
+	if(op_stack->top == NULL)
+	  break;
+      }
+      push_operator(op_stack, next_operator);
+    }
+  }
+}
 
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
@@ -465,62 +502,69 @@ make_command_stream (int (*get_next_byte) (void *),
   
   while(current_token != NULL)
   {
-	switch(current_token->type)
-	{
-	  case AND:
-	  case OR:
+    switch(current_token->type)
+    {
+      case AND:
+      case OR:
       case PIPE:
-	  case SEMICOLON:
-	    //implement operator logic
-		break;
-	  case LEFT_PAREN:
-		push_operator(operators, current_token);
-		break;
-	  case RIGHT_PAREN:
-		//implement parenthesis logic
-		top_operator = pop_operator(operators);
-		while(top_operator->type != LEFT_PAREN)
-		{
-		  second_command = pop_command(commands);
-		  first_command = pop_command(commands);
-		  new_command = combine_command(first_command, second_command, top_operator);
-		  push_command(commands, NULL, new_command); 
-		}
-		struct command* subshell_command = (struct command*)checked_malloc(sizeof(struct command));
-		subshell_command->type = SUBSHELL_COMMAND;
-		subshell_command->status = -1;
-		subshell_command->input = NULL;
-		subshell_command->output = NULL;
-		subshell_command->u.subshell_command = pop_command(commands);
-		push_command(commands, NULL, subshell_command);
-		break;
-	  case INPUT:
-		top_command = pop_command(commands);
-		top_command->input = current_token->next->word; //if not a word, error
-		push_command(commands, NULL, top_command);
-		break;
-	  case OUTPUT:
-		//implement redirect logic
-		top_command = pop_command(commands);
-		top_command->output = current_token->next->word;  //if not a word, error
-		push_command(commands, NULL, top_command);
-		break;
-	  case WORD:
-		//implement word logic
-		push_command(commands, current_token, NULL);
-		break;
-	  case NEWLINE:
-		//newline logic
-		break;
-	  case COMMENT:
-		//????
-		break;
-	  case ENDOFFILE:
-		//treat as its own command
-	  default:
-		//error at line number
-		exit(1);
+      case SEMICOLON:
+	//implement operator logic
+	process_operator(current_token, commands, operators);
+	break;
+      case LEFT_PAREN:
+	push_operator(operators, current_token);
+	break;
+      case RIGHT_PAREN:
+	//implement parenthesis logic
+	top_operator = pop_operator(operators);
+	while(top_operator->type != LEFT_PAREN)
+	{
+	  second_command = pop_command(commands);
+	  first_command = pop_command(commands);
+	  new_command = combine_command(first_command, second_command, top_operator);
+	  push_command(commands, NULL, new_command); 
 	}
+	struct command* subshell_command = (struct command*)checked_malloc(sizeof(struct command));
+	subshell_command->type = SUBSHELL_COMMAND;
+	subshell_command->status = -1;
+	subshell_command->input = NULL;
+	subshell_command->output = NULL;
+	subshell_command->u.subshell_command = pop_command(commands);
+	push_command(commands, NULL, subshell_command);
+	break;
+      case INPUT:
+	top_command = pop_command(commands);
+	top_command->input = current_token->next->word; //if not a word, error
+	push_command(commands, NULL, top_command);
+	break;
+      case OUTPUT:
+	//implement redirect logic
+	top_command = pop_command(commands);
+	top_command->output = current_token->next->word;  //if not a word, error
+	push_command(commands, NULL, top_command);
+	break;
+      case WORD:
+	//implement word logic
+	push_command(commands, current_token, NULL);
+	break;
+      case NEWLINE:
+	//newline logic
+	//if single newline
+	//operator logic, sequence
+	if(current_token->next->type != NEWLINE)
+          process_operator(current_token, commands, operators);
+	//else
+	//start new command tree
+	break;
+      case COMMENT:
+	//treat as its own command tree root
+	break;
+      case ENDOFFILE:
+		//treat as its own command tree root
+      default:
+	//error at line number
+	exit(1);
+    }
   }
   return cmd_stream;
 }
