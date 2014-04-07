@@ -47,8 +47,9 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
       newtop->prev = stack->top;
       stack->top = newtop;
     }
-    tok = tok->next;
-    while(tok->type == WORD)  //reads consecutive word commands if they exist
+    tok = tok->next;          // Pass by reference?
+    /* Reads consecutive word commands if they exist. */
+    while(tok->type == WORD)
     {
       newtop->cmd->u.word[current_word++] = tok->word;
       tok = tok->next;
@@ -58,7 +59,6 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
   return stack->top;
 }
 
-//pop the top command off of the command stack
 struct command* pop_command (struct command_stack *stack)
 {
   struct command_stack_node *temp = stack->top;
@@ -86,6 +86,47 @@ struct token* pop_operator (struct operator_stack *stack)
   return op;
 }
 
+struct command* combine_command(struct command* first, struct command* second, struct token* op)
+{
+  if(first == NULL || second == NULL || op == NULL)
+  {
+    fprintf(stderr, "Error in combine_command: Invalid input to function.\n");
+    exit(1);
+  }
+
+  struct command* new_command = (struct command*)checked_malloc(sizeof(struct command));
+
+  switch(op->type)
+  {
+    case AND:
+      new_command->type = AND_COMMAND;
+      new_command->u.command[0] = first;
+      new_command->u.command[1] = second;
+      break;
+    case OR:
+      new_command->type = OR_COMMAND;
+      new_command->u.command[0] = first;
+      new_command->u.command[1] = second;
+      break;
+    case PIPE:
+      new_command->type = PIPE_COMMAND;
+      new_command->u.command[0] = first;
+      new_command->u.command[1] = second;
+      break;
+    case SEMICOLON:
+      /* In the case of a single newline */
+    case NEWLINE:
+      new_command->type = SEQUENCE_COMMAND;
+      new_command->u.command[0] = first;
+      new_command->u.command[1] = second;
+      break;
+    default:
+      fprintf(stderr, "Error in combine_command: Invalid input operator.\n");
+      exit(1);
+      break;
+  }
+  return new_command;
+}
 
 /*struct command_node insert_command_node (struct command_node *tail, struct command cmd)
 {

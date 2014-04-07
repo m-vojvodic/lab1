@@ -8,7 +8,28 @@ typedef struct token* token_t;
 typedef struct token_stream* token_stream_t;
 typedef struct command_node* command_node_t;
 typedef struct command_stream* command_stream_t;
+typedef struct command_stack_node* command_stack_node_t;
+typedef struct command_stack* command_stack_t;
+typedef struct operator_stack_node* operator_stack_node_t;
+typedef struct operator_stack* operatr_stack_t;
 typedef enum command_type* command_type_t;
+typedef enum token_type* token_type_t;
+
+/* Push commmand onto command stack and return the top command on stack. */
+struct command_stack_node* push_command (struct command_stack *stack, struct token* tok, struct command* cmd);
+
+/* Pop command off of command stack and return command. */
+struct command* pop_command (struct command_stack *stack);
+
+/* Push operator onto operator stack and return the top operator on stack. */
+struct operator_stack_node* push_operator(struct operator_stack* stack, struct token* tok);
+
+/* Pop operator off of operator stack and return operator. */
+struct token* pop_operator (struct operator_stack *stack);
+
+/* Combine two pre-existing commands with a token operator to create a new
+   command and return it. */
+struct command* combine_command(struct command* first, struct command* second, struct token* op);
 
 /* Evaluates operator precedence. */
 int precedence(enum command_type op);
