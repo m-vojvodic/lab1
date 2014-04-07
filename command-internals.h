@@ -74,7 +74,7 @@ struct token_stream
 
 struct command_node
 {
-  struct command_t *command;
+  struct command *command;
   struct command_node *next;
 };
 

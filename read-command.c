@@ -429,7 +429,7 @@ void free_token_stream(struct token_stream stream)
   return;
 }
 
-/*
+
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
 		     void *get_next_byte_argument)
@@ -439,10 +439,93 @@ make_command_stream (int (*get_next_byte) (void *),
   // You can also use external functions defined in the GNU C Library.  
   // need to create a combine_command function
   // command/operator stack
-  error (1, 0, "command reading not yet implemented");
-  return 0;
+
+  struct command_stream* cmd_stream = (struct command_stream*) checked_malloc(sizeof(struct command_stream));
+  cmd_stream->head = NULL;
+  cmd_stream->tail = NULL;
+
+  struct token_stream tokens = make_token_stream(get_next_byte, get_next_byte_argument);
+
+  struct command_stack* commands = (struct command_stack*) checked_malloc(sizeof(struct command_stack));
+  commands->top = NULL;
+  commands->bottom = NULL;
+
+  struct operator_stack* operators = (struct operator_stack*) checked_malloc(sizeof(struct operator_stack));
+  operators->top = NULL;
+  operators->bottom = NULL;
+
+  struct token* top_operator;
+  struct command* top_command;
+  struct command* first_command;
+  struct command* second_command;
+  struct command* new_command;
+
+  struct token* current_token = tokens.head;
+  //struct token* next_token = current_token->next;
+  
+  while(current_token != NULL)
+  {
+	switch(current_token->type)
+	{
+	  case AND:
+	  case OR:
+      case PIPE:
+	  case SEMICOLON:
+	    //implement operator logic
+		break;
+	  case LEFT_PAREN:
+		push_operator(operators, current_token);
+		break;
+	  case RIGHT_PAREN:
+		//implement parenthesis logic
+		top_operator = pop_operator(operators);
+		while(top_operator->type != LEFT_PAREN)
+		{
+		  second_command = pop_command(commands);
+		  first_command = pop_command(commands);
+		  new_command = combine_command(first_command, second_command, top_operator);
+		  push_command(commands, NULL, new_command); 
+		}
+		struct command* subshell_command = (struct command*)checked_malloc(sizeof(struct command));
+		subshell_command->type = SUBSHELL_COMMAND;
+		subshell_command->status = -1;
+		subshell_command->input = NULL;
+		subshell_command->output = NULL;
+		subshell_command->u.subshell_command = pop_command(commands);
+		push_command(commands, NULL, subshell_command);
+		break;
+	  case INPUT:
+		top_command = pop_command(commands);
+		top_command->input = current_token->next->word; //if not a word, error
+		push_command(commands, NULL, top_command);
+		break;
+	  case OUTPUT:
+		//implement redirect logic
+		top_command = pop_command(commands);
+		top_command->output = current_token->next->word;  //if not a word, error
+		push_command(commands, NULL, top_command);
+		break;
+	  case WORD:
+		//implement word logic
+		push_command(commands, current_token, NULL);
+		break;
+	  case NEWLINE:
+		//newline logic
+		break;
+	  case COMMENT:
+		//????
+		break;
+	  case ENDOFFILE:
+		//treat as its own command
+	  default:
+		//error at line number
+		exit(1);
+	}
+  }
+  return cmd_stream;
 }
 
+/*
 command_t  //need to change to struct command
 read_command_stream (command_stream_t s)
 {
