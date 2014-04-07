@@ -64,17 +64,9 @@ struct token_stream
   struct token *tail;
 };
 
-/*struct command_stream
-{
-  command_t *cmd_stream; //pointer to beginning of stream
-  int num_commands; //number of command in the array
-  int curr_index; //the index of the current command
-  int size; //the total size of the array, changes with reallocation
-}*/
-
 struct command_node
 {
-  struct command *command;
+  struct command *cmd;
   struct command_node *next;
 };
 
@@ -82,6 +74,9 @@ struct command_stream
 {
   struct command_node *head;
   struct command_node *tail;
+  struct command_node *current;
+  int num_commands;
+  int num_commands_read;
 };
 
 struct command_stack_node

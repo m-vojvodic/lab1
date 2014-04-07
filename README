@@ -11,4 +11,4 @@ TODO:
 - command node --> tree root
   * COMMENT, ENDOFFILE treated as their own command tree roots?
 - finish implementing logic
-- EAT FOOD!!!
+- write free functions for command_stack, operator_stack, and command_stream
