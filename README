@@ -4,7 +4,6 @@ Replace this README file with notes on your implementation.
 Mentions any special features or limitations.
 
 TODO:
-- review EOF parsing (currently parsed as \n).
 - write an actual README file with actual notes on the ACTUAL program.
 - add more test cases
 - error checking (empty stack, invalid token stream, redirect conditions)

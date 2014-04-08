@@ -30,17 +30,16 @@ main (int argc, char **argv)
   bool print_tree = false;
   bool time_travel = false;
   program_name = argv[0];
-  
+
   for (;;)
     switch (getopt (argc, argv, "pt"))
       {
-      case 'p': print_tree = true; break;
-	//case 't': time_travel = true; break;
-      default: usage (); break;
-      case -1: goto options_exhausted;
+	case 'p': print_tree = true; break;
+	case 't': time_travel = true; break;
+        default: usage (); break;
+        case -1: goto options_exhausted;
       }
  options_exhausted:;
-
   // There must be exactly one file argument.
   if (optind != argc - 1)
     usage ();
@@ -50,7 +49,7 @@ main (int argc, char **argv)
   if (! script_stream)
     error (1, errno, "%s: cannot open", script_name);
 
-
+  
   command_stream_t command_stream =
     make_command_stream (get_next_byte, script_stream);
 
@@ -71,8 +70,8 @@ main (int argc, char **argv)
     }
 
   return print_tree || !last_command ? 0 : command_status (last_command);
-
-  /* TEST TOKEN STREAM
+  
+  /*
   struct token_stream tokens = make_token_stream(get_next_byte, script_stream);
   struct token* current = tokens.head;
   while(current != NULL)
@@ -120,15 +119,7 @@ main (int argc, char **argv)
       }
       current = current->next;
     }
-  */
-  //	free_token_stream(tokens);
-
-  
-
-
-
-
-
+    free_token_stream(tokens); */
   	fclose(script_stream);
 	return 0;
 }
