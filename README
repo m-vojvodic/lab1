@@ -7,8 +7,11 @@ TODO:
 - review EOF parsing (currently parsed as \n).
 - write an actual README file with actual notes on the ACTUAL program.
 - add more test cases
-- error checking (empty stack, invalid token stream, etc)
+- error checking (empty stack, invalid token stream, redirect conditions)
+  * newline between commands (see test-p-bad.sh)
 - command node --> tree root
   * COMMENT, ENDOFFILE treated as their own command tree roots?
 - finish implementing logic
 - write free functions for command_stack, operator_stack, and command_stream
+- write finish command to process command and operator stacks when a new
+  command node must be created

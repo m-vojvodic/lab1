@@ -15,7 +15,8 @@ typedef struct operator_stack* operatr_stack_t;
 typedef enum command_type* command_type_t;
 typedef enum token_type* token_type_t;
 
-/* Push commmand onto command stack and return the top command on stack. */
+/* Push commmand onto command stack and return the top command on stack.
+   If push a token, creates a new command from that token. */
 struct command_stack_node* push_command (struct command_stack *stack, struct token* tok, struct command* cmd);
 
 /* Pop command off of command stack and return command. */
