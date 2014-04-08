@@ -7,7 +7,7 @@
 #include "alloc.h"
 #include <error.h>
 
-static int line_number = 1;
+int line_number = 1;
 
 struct command_stack_node* push_command (struct command_stack *stack, struct token* tok, struct command* cmd)
 {
@@ -28,15 +28,16 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
     newtop->cmd = cmd;
     newtop->prev = stack->top;
     stack->top = newtop;
-    fprintf(stderr, "Pushed a command.\n");
+    // to debug, uncomment
+    // fprintf(stderr, "Pushed a command.\n");
   }
 
   /* Input is a token and needs to be converted into a command within a
      command_stack_node */
   else if(cmd == NULL && tok != NULL)
   {
-	
-    fprintf(stderr, "Pushed a command (%d).\n", tok->type);
+    // to debug, uncomment
+    // fprintf(stderr, "Pushed a command (%d).\n", tok->type);
     int num_word = 5; // if current word = num_word, realloc
     newtop->cmd = (struct command*) checked_malloc(sizeof(struct command));
     newtop->cmd->u.word = (char **) checked_malloc(num_word * sizeof(char *));
@@ -68,12 +69,16 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
 struct command* pop_command (struct command_stack *stack)
 {
   if(stack->top == NULL)
-    return NULL;
+  {
+    fprintf(stderr, "%d: Cannot pop empty stack.\n", line_number-1);
+    exit(1);
+  }
   struct command_stack_node *temp = stack->top;
   struct command* cmd = temp->cmd;
   stack->top = stack->top->prev;
   free(temp);
-  fprintf(stderr, "Popped a command(%d).\n", cmd->type);
+  // to debug, uncomment
+  // fprintf(stderr, "Popped a command(%d).\n", cmd->type);
   return cmd;
 }
 
@@ -83,19 +88,24 @@ struct operator_stack_node* push_operator(struct operator_stack* stack, struct t
   newtop->op = tok;
   newtop->prev = stack->top;
   stack->top = newtop;
-  fprintf(stderr, "Pushed an operator (%d).\n", tok->type);
+  // to debug, uncomment
+  // fprintf(stderr, "Pushed an operator (%d).\n", tok->type);
   return stack->top;
 }
 
 struct token* pop_operator (struct operator_stack *stack)
 {
   if(stack->top == NULL)
-    return NULL;
+  {
+    fprintf(stderr, "%d: Cannot pop empty stack.\n", line_number-1);
+    exit(1);
+  }
   struct operator_stack_node *temp = stack->top;
   struct token* op = temp->op;
   stack->top = stack->top->prev;
   free(temp);
-  fprintf(stderr, "Popped an operator (%d).\n", op->type);
+  // to debug, uncomment
+  // fprintf(stderr, "Popped an operator (%d).\n", op->type);
   return op;
 }
 
@@ -138,7 +148,8 @@ struct command* combine_command(struct command* first, struct command* second, s
       exit(1);
       break;
   }
-  fprintf(stderr, "Combined a command.\n");
+  // to debug, uncomment
+  // fprintf(stderr, "Combined a command.\n");
   return new_command;
 }
 
@@ -265,9 +276,9 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
       if(next_byte == '&')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
-	(new_token)->type = AND;
-	(new_token)->next = NULL;
-	(new_token)->word = NULL; //do we need to store a word for special characters?
+	new_token->type = AND;
+	new_token->next = NULL;
+	new_token->word = NULL;
       }
       else
       {
@@ -282,7 +293,7 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
 	new_token->type = OR;
 	new_token->next = NULL;
-	new_token->word = NULL; //do we need to store a word for special characters?
+	new_token->word = NULL;
       }
       else
       {
@@ -313,7 +324,7 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
       break;
     case '>': // OUTPUT
       next_byte = get_next_byte(get_next_byte_arg);
-      if(next_byte != '\n') // next byte or next token?
+      if(next_byte != '\n' && next_byte != '>' && next_byte != '<')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
 	new_token->type = OUTPUT;
@@ -329,7 +340,7 @@ struct token* get_next_token(int (*get_next_byte) (void *), void *get_next_byte_
       break;
     case '<': // INPUT
       next_byte = get_next_byte(get_next_byte_arg);
-      if(next_byte != '\n')
+      if(next_byte != '\n' && next_byte != '>' && next_byte != '<')
       {
 	new_token = (struct token*)checked_malloc(sizeof(struct token));
 	new_token->type = INPUT;
@@ -390,13 +401,14 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
 
   tokens.head = current_token;
   tokens.tail = current_token;
-
-  int i = 0;
+  // to debug, uncomment
+  // int i = 0;
   
   while((current_token)->type != ENDOFFILE)
   {
-    fprintf(stderr, "TOKEN %d FOUND --> number %d\n", current_token->type, i); // for debugging
-    i++;
+    // to debug, uncomment
+    // fprintf(stderr, "TOKEN %d FOUND --> number %d\n", current_token->type, i);
+    // i++;
     next_token = get_next_token(get_next_byte, get_next_byte_arg);
     (current_token)->next = next_token;
     tokens.tail = next_token;
@@ -404,7 +416,7 @@ struct token_stream make_token_stream(int (*get_next_byte) (void *), void *get_n
   }
   (tokens.tail)->next = NULL;
 
-  //  fprintf(stdout, "Lines: %d\n", line_number-1);
+  line_number = 1;
   return tokens;
 }
 
@@ -564,22 +576,24 @@ make_command_stream (int (*get_next_byte) (void *),
         current_token = current_token->next;
 	    break;
       case INPUT:
-	    top_command = pop_command(commands);
-	    top_command->input = current_token->next->word; //if not a word, error
-	    fprintf(stderr, "Added input to command.\n");
-	    push_command(commands, NULL, top_command);
-	    if(current_token->next == NULL)
-	    {
-	      fprintf(stderr, "%d: Invalid input to command.\n", line_number);
-	      exit(1);
-	    }
+	top_command = pop_command(commands);
+	top_command->input = current_token->next->word; //if not a word, error
+	// to debug, uncomment
+	// fprintf(stderr, "Added input to command.\n");
+	push_command(commands, NULL, top_command);
+	if(current_token->next == NULL)
+        {
+	  fprintf(stderr, "%d: Invalid input to command.\n", line_number);
+	  exit(1);
+	}
         prev_token = current_token->next;
-	    current_token = current_token->next->next; // skip the next command
-	    break;
+	current_token = current_token->next->next; // skip the next command
+	break;
       case OUTPUT:
         top_command = pop_command(commands);
         top_command->output = current_token->next->word;  //if not a word,error
-	    fprintf(stderr, "Added output to command.\n");
+	// to debug, uncomment
+	// fprintf(stderr, "Added output to command.\n");
         push_command(commands, NULL, top_command);
 	    if(current_token->next == NULL)
 	    {
@@ -606,7 +620,7 @@ make_command_stream (int (*get_next_byte) (void *),
           fprintf(stderr, "%d: Invalid syntax.\n", line_number - 1);
           exit(1);
         }
-        // if not a sequence
+        // if not preceded by a complete command
 	    if(prev_token->type == AND || prev_token->type == OR ||
 	       prev_token->type == PIPE)
 	    {
@@ -615,21 +629,12 @@ make_command_stream (int (*get_next_byte) (void *),
             fprintf(stderr, "%d: Invalid syntax.\n", line_number - 1);
             exit(1);
           }
-	      // finish processing current command sequence
-	      /*while(operators->top != NULL)
-	      {
-	        top_operator = pop_operator(operators);
-	        second_command = pop_command(commands);
-	        first_command = pop_command(commands);
-	        new_command = combine_command(first_command, second_command, top_operator);
-	        push_command(commands, NULL, new_command);
-	      }*/
 
-	      // increment current token to next non-newline token
-	      while(current_token->type == NEWLINE)
+	  // increment current token to next non-newline token
+	  while(current_token->type == NEWLINE)
           {
             prev_token = current_token;
-	        current_token = current_token->next;
+	    current_token = current_token->next;
             line_number++;
           }
         }
@@ -638,100 +643,97 @@ make_command_stream (int (*get_next_byte) (void *),
           while(current_token->type == NEWLINE)
           {
             prev_token = current_token;
-	        current_token = current_token->next;
+	    current_token = current_token->next;
             line_number++;
           }
           if(current_token->type == ENDOFFILE)
           {
             while(operators->top != NULL)
-	        {
-	          top_operator = pop_operator(operators);
-	          second_command = pop_command(commands);
-	          first_command = pop_command(commands);
-	          new_command = combine_command(first_command, second_command, top_operator);
-	          push_command(commands, NULL, new_command);
-	        }
+	    {
+	      top_operator = pop_operator(operators);
+	      second_command = pop_command(commands);
+	      first_command = pop_command(commands);
+	      new_command = combine_command(first_command, second_command, top_operator);
+	      push_command(commands, NULL, new_command);
+	    }
             cmd_stream->tail->cmd = pop_command(commands);
             cmd_stream->tail->next = NULL;
             break;
           }
-          if(current_token->next->type == AND || current_token->next->type == OR ||
-             current_token->next->type == PIPE || current_token->next->type == SEMICOLON) //perhaps more cases?
+	  if(current_token->type == AND || current_token->type == OR ||
+             current_token->type == PIPE || current_token->type == SEMICOLON) //perhaps more cases?
           {
             fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
             exit(1);
-          }
+	  }
           push_command(commands, current_token, NULL);
-	      /*// increment current token to next non-newline token
-	     
-	      fprintf(stderr, "Created new command node tree.\n");
-
-	      // set current command node command pointer to top command
-	      cmd_stream->tail->cmd = pop_command(commands);
-
-	      // create new command node
-	      cmd_stream->tail->next = (struct command_node*)checked_malloc(sizeof(struct command_node));
-	      cmd_stream->tail = cmd_stream->tail->next;
-	      cmd_stream->tail->cmd = NULL;
-	      cmd_stream->tail->next = NULL;
-	      cmd_stream->num_commands++;*/
         }
         else  //Mutiple newlines after a complete command
         {
           while(current_token->type == NEWLINE)
           {
+	    // increment current pointer to next non newline
             prev_token = current_token;
-	        current_token = current_token->next;
+	    current_token = current_token->next;
             line_number++;
           }
-          
-          if(current_token->type == ENDOFFILE)
-          {
+	  if(current_token->type == ENDOFFILE)
+	  {
+	    // combine the last commands remaining on the stack
             while(operators->top != NULL)
-	        {
-	          top_operator = pop_operator(operators);
-	          second_command = pop_command(commands);
-	          first_command = pop_command(commands);
-	          new_command = combine_command(first_command, second_command, top_operator);
-	          push_command(commands, NULL, new_command);
-	        }
+	    {
+	      top_operator = pop_operator(operators);
+	      second_command = pop_command(commands);
+	      first_command = pop_command(commands);
+	      new_command = combine_command(first_command, second_command, top_operator);
+	      push_command(commands, NULL, new_command);
+	    }
             cmd_stream->tail->cmd = pop_command(commands);
             cmd_stream->tail->next = NULL;
-            break;
-          }
-          if(current_token->next->type == AND || current_token->next->type == OR ||
-             current_token->next->type == PIPE || current_token->next->type == SEMICOLON) //perhaps more cases?
+	    break;
+	  }
+
+          if(current_token->type == AND || current_token->type == OR ||
+             current_token->type == PIPE || current_token->type == SEMICOLON) //perhaps more cases?
           {
             fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
             exit(1);
-          }
-          push_command(commands, current_token, NULL);
-	      // increment current token to next non-newline token
-	     
-	      fprintf(stderr, "Created new command node tree.\n");
-
-	      // set current command node command pointer to top command
-	      cmd_stream->tail->cmd = pop_command(commands);
-
-	      // create new command node
-	      cmd_stream->tail->next = (struct command_node*)checked_malloc(sizeof(struct command_node));
-	      cmd_stream->tail = cmd_stream->tail->next;
-	      cmd_stream->tail->cmd = NULL;
-	      cmd_stream->tail->next = NULL;
-	      cmd_stream->num_commands++;
+	  }
+	  
+	  // combine the last commands remaining on the stacks
+	  while(operators->top != NULL)
+	  {
+	    top_operator = pop_operator(operators);
+	    second_command = pop_command(commands);
+	    first_command = pop_command(commands);
+	    new_command = combine_command(first_command, second_command, top_operator);
+	    push_command(commands, NULL, new_command);
+	  }
+	  
+	  // set current command node command pointer to top command
+	  cmd_stream->tail->cmd = pop_command(commands);
+	  
+	  // create new command node
+	  cmd_stream->tail->next = (struct command_node*)checked_malloc(sizeof(struct command_node));
+	  cmd_stream->tail = cmd_stream->tail->next;
+	  cmd_stream->tail->cmd = NULL;
+	  cmd_stream->tail->next = NULL;
+	  cmd_stream->num_commands++;
+	  // to debug, uncomment
+	  // fprintf(stderr, "Created new command node tree.\n");
         }
         break;
       case COMMENT:
-	    push_command(commands, current_token, NULL);
-	    prev_token = current_token;
+	push_command(commands, current_token, NULL);
+	prev_token = current_token;
         current_token = current_token->next;
         break;
       case ENDOFFILE:
-	    current_token = NULL;
-	    break;
+	current_token = NULL;
+	break;
       default:
-	    fprintf(stderr, "%d: Syntax error.\n", line_number);
-	    exit(1);
+	fprintf(stderr, "%d: Syntax error.\n", line_number);
+	exit(1);
     }
   }
 
