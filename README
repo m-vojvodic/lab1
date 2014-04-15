@@ -29,3 +29,8 @@ Other than this, there are no other limitations which have been encountered and 
 TODO:
 - possibly more error checking for Lab 1B
 - write free functions for command_stack, operator_stack, and command_stream
+- pipe 
+
+TOFIX:
+- check_output
+  * file permissions (cannot create)

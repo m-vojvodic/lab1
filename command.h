@@ -11,7 +11,7 @@ typedef struct command_stream* command_stream_t;
 typedef struct command_stack_node* command_stack_node_t;
 typedef struct command_stack* command_stack_t;
 typedef struct operator_stack_node* operator_stack_node_t;
-typedef struct operator_stack* operatr_stack_t;
+typedef struct operator_stack* operator_stack_t;
 typedef enum command_type* command_type_t;
 typedef enum token_type* token_type_t;
 
@@ -70,11 +70,12 @@ command_stream_t make_command_stream (int (*getbyte) (void *), void *arg);
 command_t read_command_stream (command_stream_t stream);
 
 /* Print a command to stdout, for debugging.  */
-void print_command (command_t);
+void print_command (command_t c);
 
 /* Execute a command.  Use "time travel" if the flag is set.  */
-void execute_command (command_t, bool);
+void execute_command (command_t c, bool time_travel);
 
 /* Return the exit status of a command, which must have previously
    been executed.  Wait for the command, if it is not already finished.  */
-int command_status (command_t);
+int command_status (command_t c);
+

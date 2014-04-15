@@ -102,4 +102,3 @@ struct operator_stack
   struct operator_stack_node *top;
   struct operator_stack_node *bottom;
 };
-
