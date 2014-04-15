@@ -75,8 +75,48 @@ execute_and_command(command_t cmd)
 static void
 execute_or_command(command_t cmd)
 {
-	fprintf(stderr, "%d\n", cmd->type);
-	return;
+	pid_t left_pid;
+	pid_t right_pid;
+	int eStatus;
+
+	left_pid = fork();
+	if(left_pid < 0)
+	{
+		error(1, errno, "fork was unsuccessful");
+	}
+	else if(left_pid == 0) // child process executes the left command
+	{
+		execute(cmd->u.command[0]);
+		_exit(cmd->u.command[0]->status);
+	}
+	else
+	{
+		waitpid(left_pid, &eStatus, 0);
+		if(WEXITSTATUS(eStatus) == 0) // if left side of || is true, don't need to execute right side
+		{
+			cmd->status = WEXITSTATUS(eStatus);
+			return;
+		}
+		else // if left side of || is false, need to execute right side
+		{
+			right_pid = fork();
+			if(right_pid < 0)
+			{
+				error(1, errno, "fork was unsuccessful");
+			}
+			else if(right_pid == 0) // child process executes the right command
+			{
+				execute(cmd->u.command[1]);
+				_exit(cmd->u.command[1]->status);
+			}
+			else // parent process
+			{
+				waitpid(right_pid, &eStatus, 0);
+				cmd->status = WEXITSTATUS(eStatus);
+			}
+			return;
+		}
+	}
 }
 
 static void
@@ -115,7 +155,24 @@ execute_simple_command(command_t cmd)
 static void
 execute_subshell_command(command_t cmd)
 {
-	fprintf(stderr, "%d\n", cmd->type);
+	pid_t child_pid;
+	int eStatus;	
+
+	child_pid = fork();
+	if(child_pid < 0) 
+	{
+		error(1, errno, "fork was unsuccessful");
+	}
+	else if(child_pid == 0) // child process executes subshell command
+	{
+		execute(cmd->u.subshell_command);
+		_exit(cmd->u.subshell_command->status);
+	}
+	else // parent process
+	{
+		waitpid(child_pid, &eStatus, 0);
+		cmd->status = WEXITSTATUS(eStatus);
+	}
 	return;
 }
 
