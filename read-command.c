@@ -41,7 +41,7 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
     int num_word = 5; // if current word = num_word, realloc
     newtop->cmd = (struct command*) checked_malloc(sizeof(struct command));
     newtop->cmd->u.word = (char **) checked_malloc(num_word * sizeof(char *));
-    
+
     if(tok->type == WORD)
     {
       newtop->cmd->type = SIMPLE_COMMAND;
@@ -637,16 +637,20 @@ make_command_stream (int (*get_next_byte) (void *),
             line_number++;
           }
         }
-        else if(prev_token->type == SEMICOLON || current_token->next->type != NEWLINE) //is a sequence
+        else if(prev_token->type == SEMICOLON || current_token->next->type != NEWLINE) // is a sequence
         {
+	  // read in until next non-newline token
+	  // prev_token will be stored as newline
           while(current_token->type == NEWLINE)
           {
             prev_token = current_token;
 	    current_token = current_token->next;
             line_number++;
           }
+
           if(current_token->type == ENDOFFILE)
           {
+	    // TODO: shouldn't this be an error?
             while(operators->top != NULL)
 	    {
 	      top_operator = pop_operator(operators);
@@ -659,13 +663,15 @@ make_command_stream (int (*get_next_byte) (void *),
             cmd_stream->tail->next = NULL;
             break;
           }
+
 	  if(current_token->type == AND || current_token->type == OR ||
              current_token->type == PIPE || current_token->type == SEMICOLON) //perhaps more cases?
           {
             fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
             exit(1);
 	  }
-          push_command(commands, current_token, NULL);
+	  // since prev_token is a newline, will push newline (sequence) operator
+          push_operator(operators, prev_token);
         }
         else  //Mutiple newlines after a complete command
         {
@@ -697,8 +703,8 @@ make_command_stream (int (*get_next_byte) (void *),
           {
             fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
             exit(1);
-					}
-	  
+	  }
+
 	  // combine the last commands remaining on the stacks
 	  while(operators->top != NULL)
 	  {
@@ -723,9 +729,24 @@ make_command_stream (int (*get_next_byte) (void *),
         }
         break;
       case COMMENT:
-	push_command(commands, current_token, NULL);
+	// ignore comments when processing commands
+	// push_command(commands, current_token, NULL);
+	// to debug, uncomment
+	// fprintf(stderr, "%d: comment\n", line_number);
+
+	// increment line number due to comment
+	line_number++;
+
 	prev_token = current_token;
-        current_token = current_token->next;
+	current_token = current_token->next;
+
+	// if followed by newline, skip over all following newlines
+	while(current_token->type == NEWLINE)
+        {
+	  prev_token = current_token;
+	  current_token = current_token->next;
+	  line_number++;
+	}
         break;
       case ENDOFFILE:
 	current_token = NULL;

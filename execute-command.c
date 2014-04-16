@@ -140,7 +140,6 @@ execute_sequence_command(struct command* cmd)
     execute(cmd->u.command[0]);
     _exit(cmd->u.command[0]->status);
   }
-
   if(left_pid > 0) // parent process
   {
     waitpid(left_pid, &eStatus, 0);
@@ -205,10 +204,10 @@ execute_simple_command(struct command* cmd)
         error(1, errno, "Could not override stdin.\n");
       }
     }
-    // TOFIX: output file permissions
+
     if(cmd->output != NULL)
     {
-      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT);
+      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
       if(outputRedir < 0)
       {
         error(1, errno, "Output file does not exist.\n");
@@ -269,10 +268,9 @@ execute_subshell_command(struct command* cmd)
       }
     }
 
-    // TOFIX: output file permissions
     if(cmd->output != NULL)
     {
-      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT);
+      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
       if(outputRedir < 0)
       {
         error(1, errno, "Output file does not exist.\n");
