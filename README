@@ -12,25 +12,36 @@ Name: Marko Vojvodic  ID: 504158739
 
 Implementation Notes:
 
-Thus far, this program parses a shell script and fills in a data structure composed of a forest of command trees and prints out the data structure in the tree format. This formatting signifies the order in which the commands should be executed and how input and output should be processed.
+Thus far, this program parses a shell script and fills in a data structure
+composed of a forest of command trees and prints out the data structure in the
+tree format. This formatting signifies the order in which the commands should
+be executed and how input and output should be processed.
 
-In order to parse the shell script, the program first tokenizes each character or set of words in the script to allow for easier reference when creating the tree structure. Then the program finally runs an algorithm involving an operator stack and a command stack to properly parse the operator precedence and create the final tree structure. 
+In order to parse the shell script, the program first tokenizes each character
+or set of words in the script to allow for easier reference when creating the
+tree structure. Then the program finally runs an algorithm involving an
+operator stack and a command stack to properly parse the operator precedence
+and create the final tree structure. 
 
 -----------------------------------
 
 Limitations:
 
-One primary limitation of this program is that it does not eventually free the memory allocated to create the command_stream data structure which stores each and every command node. The reason for this limitation is that the main function is not to be altered. This means that a free statement calling an auxiliary function to free the memory for the structure could not be called.
+One primary limitation of this program is that it does not eventually free the
+memory allocated to create the command_stream data structure which stores each
+and every command node. The reason for this limitation is that the main
+function is not to be altered. This means that a free statement calling an
+auxiliary function to free the memory for the structure could not be called.
 
-Other than this, there are no other limitations which have been encountered and documented during testing.
+Other than this, there are no other limitations which have been encountered and
+documented during testing.
 
 -----------------------------------
 
 TODO:
 - possibly more error checking for Lab 1B
 - write free functions for command_stack, operator_stack, and command_stream
-- pipe 
+- pipe
 
 TOFIX:
-- check_output
-  * file permissions (cannot create)
+- comment processing (read-command.c)

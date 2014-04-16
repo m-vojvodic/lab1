@@ -52,7 +52,7 @@ execute_and_command(struct command* cmd)
       {
         error(1, errno, "fork was unsuccessful");
       }
-      else if (left_pid == 0) // child process executes the right command
+      else if (right_pid == 0) // child process executes the right command
       {
         execute(cmd->u.command[1]);
         _exit(cmd->u.command[1]->status);
@@ -69,7 +69,7 @@ execute_and_command(struct command* cmd)
     }
   }
 
-  fprintf(stderr, "%d\n", cmd->type);
+  fprintf(stderr, "Executed command of type:%d\n", cmd->type);
   return;
 }
 
@@ -117,7 +117,7 @@ execute_or_command(struct command* cmd)
     }
   }
 
-  fprintf(stderr, "%d\n", cmd->type);
+  fprintf(stderr, "Executed command of type:%d\n", cmd->type);
   return;
 }
 
@@ -213,7 +213,7 @@ execute_simple_command(struct command* cmd)
       {
         error(1, errno, "Output file does not exist.\n");
       }
-      if(dup2(outputRedir, 0) < 0)
+      if(dup2(outputRedir, 1) < 0)
       {
         error(1, errno, "Could not override stdout.\n");
       }
@@ -277,7 +277,7 @@ execute_subshell_command(struct command* cmd)
       {
         error(1, errno, "Output file does not exist.\n");
       }
-      if(dup2(outputRedir, 0) < 0)
+      if(dup2(outputRedir, 1) < 0)
       {
         error(1, errno, "Could not override stdout.\n");
       }
