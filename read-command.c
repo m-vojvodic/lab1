@@ -650,6 +650,11 @@ make_command_stream (int (*get_next_byte) (void *),
         {
 	  // read in until next non-newline token
 	  // prev_token will be stored as newline
+
+	  // process the sequence
+	  process_operator(current_token, commands, operators);
+
+	  // increment to the next non-newline token
           while(current_token->type == NEWLINE)
           {
             prev_token = current_token;
@@ -659,7 +664,8 @@ make_command_stream (int (*get_next_byte) (void *),
 
           if(current_token->type == ENDOFFILE)
           {
-	    // TODO: shouldn't this be an error?
+	    current_token = NULL;
+	    /*
             while(operators->top != NULL)
 	    {
 	      top_operator = pop_operator(operators);
@@ -668,6 +674,7 @@ make_command_stream (int (*get_next_byte) (void *),
 	      new_command = combine_command(first_command, second_command, top_operator);
 	      push_command(commands, NULL, new_command);
 	    }
+	    */
             cmd_stream->tail->cmd = pop_command(commands);
             cmd_stream->tail->next = NULL;
             break;
@@ -679,8 +686,6 @@ make_command_stream (int (*get_next_byte) (void *),
             fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
             exit(1);
 	  }
-	  // since prev_token is a newline, will push newline (sequence) operator
-          push_operator(operators, prev_token);
         }
         else  //Mutiple newlines after a complete command
         {
