@@ -632,7 +632,7 @@ make_command_stream (int (*get_next_byte) (void *),
 	if(prev_token->type == AND || prev_token->type == OR ||
 	   prev_token->type == PIPE)
 	{
-          if(current_token->next->type == ENDOFFILE)
+          if(current_token->type == ENDOFFILE) //TODO: why do we do current_token->next->type, why not current_token->type?
 	  {
             fprintf(stderr, "%d: Invalid syntax.\n", line_number);
             exit(1);
@@ -646,7 +646,7 @@ make_command_stream (int (*get_next_byte) (void *),
             line_number++;
           }
         }
-        else if(prev_token->type == SEMICOLON || current_token->next->type != NEWLINE) // is a sequence
+        else if(prev_token->type == SEMICOLON || current_token->type != NEWLINE) // is a sequence
         {
 	  // read in until next non-newline token
 	  // prev_token will be stored as newline
