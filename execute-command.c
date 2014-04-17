@@ -188,12 +188,14 @@ execute_simple_command(struct command* cmd)
   {
     error(1, errno, "fork was unsuccessful.");
   }
-  else if(child_pid == 0) //need to check for input/output first?
+  else if(child_pid == 0)
   {
     int inputRedir;
     int outputRedir;
+    // check for input file
     if(cmd->input != NULL)
     {
+      // if it exists, override stdin with the input file descriptor
       inputRedir = open(cmd->input, O_RDONLY);
       if(inputRedir < 0)
       {
@@ -205,8 +207,11 @@ execute_simple_command(struct command* cmd)
       }
     }
 
+    // check for output file
     if(cmd->output != NULL)
     {
+      // if it exists, override stdout with the output file descriptor
+      // if the file does not exists, create a file with read/write permissions
       outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
       if(outputRedir < 0)
       {
@@ -221,6 +226,7 @@ execute_simple_command(struct command* cmd)
     execvp(cmd->u.word[0], cmd->u.word);
     _exit(cmd->status);
 
+    // close the files if they overrode stdin/stdout
     if(cmd->input != NULL)
     {
       close(inputRedir);
@@ -255,6 +261,8 @@ execute_subshell_command(struct command* cmd)
   {
     int inputRedir;
     int outputRedir;
+
+    // check for input
     if(cmd->input != NULL)
     {
       inputRedir = open(cmd->input, O_RDONLY);
@@ -268,8 +276,11 @@ execute_subshell_command(struct command* cmd)
       }
     }
 
+    // check for output
     if(cmd->output != NULL)
     {
+      // if it exists, override stdout with the output file descriptor
+      // if the file does not exists, create a file with read/write permissions
       outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
       if(outputRedir < 0)
       {
@@ -283,7 +294,8 @@ execute_subshell_command(struct command* cmd)
 
     execute(cmd->u.subshell_command);
     _exit(cmd->u.subshell_command->status);
-    
+
+    // close the files if they overrode stdin/stdout
     if(cmd->input != NULL)
     {
       close(inputRedir);
