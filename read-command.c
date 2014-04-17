@@ -576,6 +576,11 @@ make_command_stream (int (*get_next_byte) (void *),
 	break;
       case INPUT:
 	top_command = pop_command(commands);
+	if(current_token->next->type != WORD)
+	{
+	  fprintf(stderr, "%d: Invalid input to command: not a word.\n", line_number);
+	  exit(1);
+	}
 	top_command->input = current_token->next->word; //if not a word, error
 	// to debug, uncomment
 	// fprintf(stderr, "Added input to command.\n");
@@ -590,6 +595,11 @@ make_command_stream (int (*get_next_byte) (void *),
 	break;
       case OUTPUT:
         top_command = pop_command(commands);
+	if(current_token->next->type != WORD)
+	{
+	  fprintf(stderr, "%d: Invalid output to command: not a word.\n", line_number);
+	  exit(1);
+	}
         top_command->output = current_token->next->word;  //if not a word,error
 	// to debug, uncomment
 	// fprintf(stderr, "Added output to command.\n");
@@ -613,10 +623,9 @@ make_command_stream (int (*get_next_byte) (void *),
         }
         break;
       case NEWLINE:
-        line_number++;
         if(prev_token->type == INPUT || prev_token->type == OUTPUT)
         {
-          fprintf(stderr, "%d: Invalid syntax.\n", line_number - 1);
+          fprintf(stderr, "%d: Invalid syntax.\n", line_number);
           exit(1);
         }
         // if not preceded by a complete command
@@ -625,7 +634,7 @@ make_command_stream (int (*get_next_byte) (void *),
 	{
           if(current_token->next->type == ENDOFFILE)
 	  {
-            fprintf(stderr, "%d: Invalid syntax.\n", line_number - 1);
+            fprintf(stderr, "%d: Invalid syntax.\n", line_number);
             exit(1);
           }
 	  
@@ -735,7 +744,7 @@ make_command_stream (int (*get_next_byte) (void *),
 	// fprintf(stderr, "%d: comment\n", line_number);
 
 	// increment line number due to comment
-	line_number++;
+	// line_number++;
 
 	prev_token = current_token;
 	current_token = current_token->next;
