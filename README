@@ -12,6 +12,7 @@ Name: Marko Vojvodic  ID: 504158739
 
 Implementation Notes:
 
+Parsing:
 Thus far, this program parses a shell script and fills in a data structure
 composed of a forest of command trees and prints out the data structure in the
 tree format. This formatting signifies the order in which the commands should
@@ -22,6 +23,9 @@ or set of words in the script to allow for easier reference when creating the
 tree structure. Then the program finally runs an algorithm involving an
 operator stack and a command stack to properly parse the operator precedence
 and create the final tree structure. 
+
+Execution Model:
+This program implements the execution model by forking separate processes for each command that gets executed. &&, ||, and sequence (;) commands are running sequentially because they are conditional. Pipes (|) run in parallel if possible based on the given commands. 
 
 -----------------------------------
 
@@ -39,7 +43,6 @@ documented during testing.
 -----------------------------------
 
 TODO:
-- possibly more error checking for Lab 1B
 - write free functions for command_stack, operator_stack, and command_stream
 
 UPDATE:
