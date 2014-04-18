@@ -41,11 +41,11 @@ documented during testing.
 TODO:
 - possibly more error checking for Lab 1B
 - write free functions for command_stack, operator_stack, and command_stream
-- implement pipe
 
-TOFIX:
-* comment processing works, is it ugly?
-  - fix comment processing (read-command.c)
-    ~ has to do with newline processing
-* newline as a sequence operator
-  - should reaching EOF be an error?
+UPDATE:
+corner cases: 
+- just newlines works
+- cmd;\n works
+* (
+  cmd
+  )

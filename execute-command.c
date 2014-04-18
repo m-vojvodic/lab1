@@ -68,8 +68,8 @@ execute_and_command(struct command* cmd)
       cmd->status = WEXITSTATUS(eStatus);
     }
   }
-
-  fprintf(stderr, "Executed AND_COMMAND type:%d\n", cmd->type);
+  // to debug, uncomment
+  //fprintf(stderr, "Executed AND_COMMAND.\n", cmd->type);
   return;
 }
 
@@ -116,8 +116,8 @@ execute_or_command(struct command* cmd)
       }
     }
   }
-
-  fprintf(stderr, "Executed OR_COMMAND type:%d\n", cmd->type);
+  // to debug, uncomment
+  //fprintf(stderr, "Executed OR_COMMAND type.\n", cmd->type);
   return;
 }
 
@@ -163,84 +163,84 @@ execute_sequence_command(struct command* cmd)
       cmd->status = WEXITSTATUS(eStatus);
     }
   }
-        
-  fprintf(stderr, "Executed SEQUENCE_COMMAND type:%d\n", cmd->type);
+  // to debug, uncomment
+  //fprintf(stderr, "Executed SEQUENCE_COMMAND.\n", cmd->type);
   return;
 }
 
-// TODO: pipe command
 static void
 execute_pipe_command(struct command* cmd)
 {
-	pid_t returned_pid;
-	pid_t first_pid;
-	pid_t second_pid;
-	int buffer[2];
-	int eStatus;
+  pid_t returned_pid;
+  pid_t first_pid;
+  pid_t second_pid;
+  int buffer[2];
+  int eStatus;
+  
+  if(pipe(buffer) < 0) // create a pipe: buffer[0] is the read end, buffer[1] is the write end
+  {
+    error(1, errno, "Pipe was not created.\n");
+  }
 
-	if(pipe(buffer) < 0) // create a pipe: buffer[0] is the read end, buffer[1] is the write end
-	{
-		error(1, errno, "Pipe was not created.\n");
-	}
-
-	first_pid = fork();
-	if(first_pid < 0)
-	{
-		error(1, errno, "fork in right pipe command was unsuccessful.\n");
-	}
-	else if(first_pid == 0) // the child will execute the command on the right
-	{
-		close(buffer[1]); // close the unused write end of the pipe
-		
-		if(dup2(buffer[0], 0) < 0)
-		{
-			error(1, errno, "Could not override stdin.\n");
-		}
-		execute(cmd->u.command[1]);
-		_exit(cmd->u.command[1]->status);
-	}
-	else // parent process
-	{
-		second_pid = fork();
-		
-		if(second_pid < 0)
-		{
-			error(1, 0, "fork in left pipe command was unsuccessful.\n");
-		}
-		else if(second_pid == 0) // second child process executes command on the left
-		{
-			close(buffer[0]); //close the unused read end of the pipe
-			if(dup2(buffer[1], 1) < 0)
-			{
-				error(1, errno, "Could not override stdout.\n");
-			}
-			execute(cmd->u.command[0]);
-			_exit(cmd->u.command[0]->status);
-		}
-		else // parent process
-		{
-			// wait for one of the child processes to finish.
-			// The other process might still be running.
-			returned_pid = waitpid(-1, &eStatus, 0);
-
-			close(buffer[0]); // close the read end of the pipe
-			close(buffer[1]); // close the write end of the pipe
-
-			if(second_pid == returned_pid)
-			{
-				// wait for the first child process to finish first
-				waitpid(first_pid, &eStatus, 0);
-				cmd->status = WEXITSTATUS(eStatus);
-			}
-			if(first_pid == returned_pid)
-			{
-				// wait for the second child process to finish first
-				waitpid(second_pid, &eStatus, 0);
-				cmd->status = WEXITSTATUS(eStatus);
-			}
-		}
-	}
-  fprintf(stderr, "Executed PIPE_COMMAND type:%d\n", cmd->type);
+  first_pid = fork();
+  if(first_pid < 0)
+  {
+    error(1, errno, "fork in right pipe command was unsuccessful.\n");
+  }
+  else if(first_pid == 0) // the child will execute the command on the right
+  {
+    close(buffer[1]); // close the unused write end of the pipe
+    
+    if(dup2(buffer[0], 0) < 0)
+    {
+      error(1, errno, "Could not override stdin.\n");
+    }
+    execute(cmd->u.command[1]);
+    _exit(cmd->u.command[1]->status);
+  }
+  else // parent process
+  {
+    second_pid = fork();
+    
+    if(second_pid < 0)
+    {
+      error(1, 0, "fork in left pipe command was unsuccessful.\n");
+    }
+    else if(second_pid == 0) // second child process executes command on the left
+    {
+      close(buffer[0]); //close the unused read end of the pipe
+      if(dup2(buffer[1], 1) < 0)
+      {
+        error(1, errno, "Could not override stdout.\n");
+      }
+      execute(cmd->u.command[0]);
+      _exit(cmd->u.command[0]->status);
+    }
+    else // parent process
+    {
+      // wait for one of the child processes to finish.
+      // The other process might still be running.
+      returned_pid = waitpid(-1, &eStatus, 0);
+      
+      close(buffer[0]); // close the read end of the pipe
+      close(buffer[1]); // close the write end of the pipe
+      
+      if(second_pid == returned_pid)
+      {
+        // wait for the first child process to finish first
+        waitpid(first_pid, &eStatus, 0);
+        cmd->status = WEXITSTATUS(eStatus);
+      }
+      if(first_pid == returned_pid)
+      {
+        // wait for the second child process to finish first
+        waitpid(second_pid, &eStatus, 0);
+        cmd->status = WEXITSTATUS(eStatus);
+      }
+    }
+  }
+  // to debug, uncomment
+  //fprintf(stderr, "Executed PIPE_COMMAND.\n", cmd->type);
   return;
 }
 
@@ -280,7 +280,7 @@ execute_simple_command(struct command* cmd)
     {
       // if it exists, override stdout with the output file descriptor
       // if the file does not exists, create a file with read/write permissions
-      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
+      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, 0644);
       if(outputRedir < 0)
       {
         error(1, errno, "Output file does not exist.\n");
@@ -309,8 +309,8 @@ execute_simple_command(struct command* cmd)
     waitpid(child_pid, &eStatus, 0);
     cmd->status = WEXITSTATUS(eStatus);
   }
-
-  fprintf(stderr, "Executed SIMPLE_COMMAND type:%d\n", cmd->type);
+  // to debug, uncomment
+  //fprintf(stderr, "Executed SIMPLE_COMMAND type:%d\n", cmd->type);
   return;
 }
 
@@ -349,7 +349,7 @@ execute_subshell_command(struct command* cmd)
     {
       // if it exists, override stdout with the output file descriptor
       // if the file does not exists, create a file with read/write permissions
-      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);
+      outputRedir = open(cmd->output, O_WRONLY|O_TRUNC|O_CREAT, 0644);
       if(outputRedir < 0)
       {
         error(1, errno, "Output file does not exist.\n");
@@ -378,8 +378,8 @@ execute_subshell_command(struct command* cmd)
     waitpid(child_pid, &eStatus, 0);
     cmd->status = WEXITSTATUS(eStatus);
   }
-
-  fprintf(stderr, "Executed SUBSHELL_COMMAND type:%d\n", cmd->type);
+  // to debug, uncomment
+  //fprintf(stderr, "Executed SUBSHELL_COMMAND type:%d\n", cmd->type);
   return;
 }
 
