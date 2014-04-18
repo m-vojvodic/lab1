@@ -641,7 +641,7 @@ make_command_stream (int (*get_next_byte) (void *),
              prev_token->type == PIPE || prev_token->type == LEFT_PAREN)
           {
             // increment current token to next non-newline token
-            while(current_token->type == NEWLINE)
+            while(current_token->type == NEWLINE || current_token->type == COMMENT)
             {
               prev_token = current_token;
               current_token = current_token->next;
@@ -668,7 +668,7 @@ make_command_stream (int (*get_next_byte) (void *),
             }
             
             // increment to the next non-newline token
-            while(current_token->type == NEWLINE)
+            while(current_token->type == NEWLINE || current_token->type == COMMENT)
             {
               prev_token = current_token;
               current_token = current_token->next;
@@ -727,7 +727,7 @@ make_command_stream (int (*get_next_byte) (void *),
           }
           else  //Mutiple newlines after a complete command
           {
-            while(current_token->type == NEWLINE)
+            while(current_token->type == NEWLINE || current_token->type == COMMENT)
             {
               // increment current pointer to next non newline
               prev_token = current_token;
@@ -793,7 +793,7 @@ make_command_stream (int (*get_next_byte) (void *),
         // case where file starts with 1 or more newlines
         else
         {
-          while(current_token->type == NEWLINE)
+          while(current_token->type == NEWLINE || current_token->type == COMMENT)
           {
             // increment current pointer to next non newline
             prev_token = current_token;
