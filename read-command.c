@@ -636,9 +636,9 @@ make_command_stream (int (*get_next_byte) (void *),
             fprintf(stderr, "%d: Invalid syntax.\n", line_number);
             exit(1);
           }
-          // if it separates a complete command followed by an operator
+          // if it separates a complete command followed by an operator, or open parenthesis
           if(prev_token->type == AND || prev_token->type == OR ||
-             prev_token->type == PIPE)
+             prev_token->type == PIPE || prev_token->type == LEFT_PAREN)
           {
             // increment current token to next non-newline token
             while(current_token->type == NEWLINE)
@@ -674,6 +674,12 @@ make_command_stream (int (*get_next_byte) (void *),
               current_token = current_token->next;
               line_number++;
             }
+	    
+	    // if it is a right parentheses, DO NOT process the sequence command
+	    if(current_token->type == RIGHT_PAREN)
+	    {
+	      break;
+	    }
             
             // if end of file, process 
             if(current_token->type == ENDOFFILE)
@@ -728,6 +734,7 @@ make_command_stream (int (*get_next_byte) (void *),
               current_token = current_token->next;
               line_number++;
             }
+	    // end of file
             if(current_token->type == ENDOFFILE)
             {
               // combine the last commands remaining on the stack
@@ -746,7 +753,7 @@ make_command_stream (int (*get_next_byte) (void *),
               }
               break;
             }
-            
+
             if(current_token->type == AND || current_token->type == OR ||
                current_token->type == PIPE || current_token->type == SEMICOLON) //perhaps more cases?
             {
@@ -754,6 +761,12 @@ make_command_stream (int (*get_next_byte) (void *),
               exit(1);
             }
                 
+	    // if it is a right parentheses, DO NOT process the sequence command
+	    if(current_token->type == RIGHT_PAREN)
+	    {
+	      break;
+	    }
+
             // combine the last commands remaining on the stacks
             while(operators->top != NULL)
             {
