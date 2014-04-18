@@ -655,7 +655,7 @@ make_command_stream (int (*get_next_byte) (void *),
             }
           }
           // is a sequence
-          else if(prev_token->type == SEMICOLON || current_token->next->type != NEWLINE)
+          else if(prev_token->type == SEMICOLON || (current_token->next->type != NEWLINE && current_token->next->type != COMMENT))
           {
             // read in until next non-newline token
             // prev_token will be stored as newline
