@@ -57,6 +57,11 @@ struct command_stack_node* push_command (struct command_stack *stack, struct tok
     /* Reads consecutive word commands if they exist. */
     while(tok->type == WORD)
     {
+			if(current_word == num_word)
+			{
+				num_word *= 2;
+				newtop->cmd->u.word = (char **) checked_realloc(newtop->cmd->u.word, num_word * sizeof(char *));
+			}
       newtop->cmd->u.word[current_word] = tok->word;
       current_word = current_word + 1;
       tok = tok->next;
@@ -632,7 +637,7 @@ make_command_stream (int (*get_next_byte) (void *),
 	if(prev_token->type == AND || prev_token->type == OR ||
 	   prev_token->type == PIPE)
 	{
-          if(current_token->type == ENDOFFILE) //TODO: why do we do current_token->next->type, why not current_token->type?
+          if(current_token->type == ENDOFFILE) 
 	  {
             fprintf(stderr, "%d: Invalid syntax.\n", line_number);
             exit(1);
