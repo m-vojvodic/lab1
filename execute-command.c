@@ -1,5 +1,6 @@
 // UCLA CS 111 Lab 1 command execution
 
+#include <string.h>
 #include <error.h>
 #include <stdio.h>
 #include <errno.h>
@@ -290,9 +291,18 @@ execute_simple_command(struct command* cmd)
         error(1, errno, "Could not override stdout.\n");
       }
     }
-
-    execvp(cmd->u.word[0], cmd->u.word);
-    _exit(cmd->status);
+		
+		char exec[5] = "exec\0";
+		if(strcmp(cmd->u.word[0], exec) != 0)
+		{
+    	execvp(cmd->u.word[0], cmd->u.word);
+    	_exit(cmd->status);
+		}
+		else
+		{
+			execvp(cmd->u.word[1], cmd->u.word + 1);
+			_exit(cmd->status);
+		}
 
     // close the files if they overrode stdin/stdout
     if(cmd->input != NULL)
