@@ -648,7 +648,8 @@ make_command_stream (int (*get_next_byte) (void *),
               line_number++;
             }
             // cannot have a command be EOF
-            if(current_token->type == ENDOFFILE) 
+            if(current_token->type == ENDOFFILE || current_token->type == AND ||
+	       current_token->type == OR || current_token->type == PIPE) 
             {
               fprintf(stderr, "%d: Invalid syntax.\n", line_number);
               exit(1);
@@ -721,7 +722,7 @@ make_command_stream (int (*get_next_byte) (void *),
             if(current_token->type == AND || current_token->type == OR ||
                current_token->type == PIPE || current_token->type == SEMICOLON) //perhaps more cases?
             {
-              fprintf(stderr, "%d: Invalid syntax. Newline cannot follow operator.\n", line_number - 1);
+              fprintf(stderr, "%d: Invalid syntax.\n", line_number);
               exit(1);
             }
           }
