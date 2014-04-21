@@ -1,3 +1,5 @@
+#include <sys/types.h>
+
 // UCLA CS 111 Lab 1 command internals
 
 enum command_type
@@ -101,4 +103,34 @@ struct operator_stack
 {
   struct operator_stack_node *top;
   struct operator_stack_node *bottom;
+};
+
+/* LAB 1C */
+
+struct graph_node
+{
+  struct command* cmd;
+  struct graph_node** before;
+  pid_t pid; // -1 not run
+};
+
+struct queue_node
+{
+  struct graph_node* g_node;
+  struct queue_node* next;
+  struct queue_node* prev;
+  char** read_list;
+  char** write_list;
+};
+
+struct queue // og bobby johnson
+{
+  struct queue_node* head;
+  struct queue_node* tail;
+};
+
+struct dependency_graph // gucci
+{
+  struct queue* no_dependencies;
+  struct queue*    dependencies;
 };
