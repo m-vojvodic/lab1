@@ -44,11 +44,4 @@ documented during testing.
 
 TODO:
 - write free functions for command_stack, operator_stack, and command_stream
-
-UPDATE:
-corner cases: 
-- just newlines works
-- cmd;\n works
-* (
-  cmd
-  )
+- Use chdir() to implement execution of cd command

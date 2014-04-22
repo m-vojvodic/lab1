@@ -4,9 +4,88 @@
 #include <error.h>
 #include <getopt.h>
 #include <stdio.h>
-
+#include "alloc.h"
 #include "command.h"
 #include "command-internals.h"
+
+/* LAB 1C */
+
+static
+void process_command(struct queue_node* q_node,struct command* cmd)
+{
+	if(cmd->type == SIMPLE_COMMAND)
+	{
+		if(cmd->output != NULL)
+			q_node->write_list[q_node->num_write++] = cmd->output;
+		if(cmd->input != NULL)
+			q_node->read_list[q_node->num_read++] = cmd->input;
+		int i = 0;
+		while(cmd->u.word[i] != NULL)
+		{
+			q_node->read_list[q_node->num_read++] = cmd->u.word[i];
+			i++;
+		}
+		q_node->read_list[q_node->num_read] = NULL;
+	}
+	else if(cmd->type == SUBSHELL_COMMAND)
+	{
+		if(cmd->output != NULL)
+			q_node->write_list[q_node->num_write++] = cmd->output;
+		if(cmd->input != NULL)
+			q_node->read_list[q_node->num_read++] = cmd->input;
+		process_command(q_node, cmd->u.subshell_command);
+	}
+	else
+	{
+		process_command(q_node, cmd->u.command[0]);
+		process_command(q_node, cmd->u.command[1]);
+	}
+}
+
+// Add command trees to the tail of the queue
+struct queue_node* enqueue(struct queue* q, struct command_node* cmd_node)
+{
+	struct queue_node* new_node = (struct queue_node*) checked_malloc(sizeof(struct queue_node));
+
+	if(q->tail == NULL && q->head == NULL) //empty queue
+	{
+		q->head = new_node;
+		q->tail = new_node;
+		new_node->next = NULL;
+		new_node->prev = NULL;
+		new_node->g_node = (struct graph_node*) checked_malloc(sizeof(struct graph_node));
+	}
+	else
+	{
+		q->tail->next = new_node;
+		new_node->prev = q->tail;
+		new_node->next = NULL;
+		q->tail = new_node;
+		new_node->g_node = (struct graph_node*) checked_malloc(sizeof(struct graph_node));
+	}
+	new_node->g_node->cmd = cmd_node->cmd;
+	new_node->g_node->before = NULL;
+	new_node->g_node->num_before = 0;
+	new_node->g_node->pid = -1;
+	new_node->num_read = 0;
+	new_node->num_write = 0;
+	process_command(new_node, cmd_node->cmd);
+	return new_node;
+}
+
+// Execute command trees from the head of the queue (FIFO)
+struct queue_node* dequeue(struct queue* q)
+{
+	if(q->head == NULL && q->tail == NULL)
+	{
+		return NULL;
+	}
+	
+	struct queue_node* node = q->head;
+	q->head = q->head->next;
+	q->head->prev = NULL;
+	return node;
+}
 
 static char const *program_name;
 static char const *script_name;

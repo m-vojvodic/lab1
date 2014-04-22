@@ -1,3 +1,6 @@
+#ifndef __COMMAND_INTERNALS_H__
+#define __COMMAND_INTERNALS_H__
+
 #include <sys/types.h>
 
 // UCLA CS 111 Lab 1 command internals
@@ -111,6 +114,7 @@ struct graph_node
 {
   struct command* cmd;
   struct graph_node** before;
+	int num_before;
   pid_t pid; // -1 not run
 };
 
@@ -120,17 +124,21 @@ struct queue_node
   struct queue_node* next;
   struct queue_node* prev;
   char** read_list;
+	int num_read;
   char** write_list;
+	int num_write;
 };
 
-struct queue // og bobby johnson
+struct queue
 {
   struct queue_node* head;
   struct queue_node* tail;
 };
 
-struct dependency_graph // gucci
+struct dependency_graph
 {
   struct queue* no_dependencies;
   struct queue*    dependencies;
 };
+
+#endif

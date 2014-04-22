@@ -11,9 +11,6 @@
 #include "command.h"
 #include "command-internals.h"
 
-/* FIXME: You may need to add #include directives, macro definitions,
-   static function definitions, etc.  */
-
 void execute(struct command* cmd);
 
 static void
