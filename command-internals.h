@@ -114,7 +114,7 @@ struct graph_node
 {
   struct command* cmd;
   struct graph_node** before;
-	int num_before;
+  int num_before;
   pid_t pid; // -1 not run
 };
 
@@ -124,9 +124,9 @@ struct queue_node
   struct queue_node* next;
   struct queue_node* prev;
   char** read_list;
-	int num_read;
+  int num_read;
   char** write_list;
-	int num_write;
+  int num_write;
 };
 
 struct queue

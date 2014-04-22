@@ -288,18 +288,18 @@ execute_simple_command(struct command* cmd)
         error(1, errno, "Could not override stdout.\n");
       }
     }
-		
-		char exec[5] = "exec\0";
-		if(strcmp(cmd->u.word[0], exec) != 0)
-		{
-    	execvp(cmd->u.word[0], cmd->u.word);
-    	_exit(cmd->status);
-		}
-		else
-		{
-			execvp(cmd->u.word[1], cmd->u.word + 1);
-			_exit(cmd->status);
-		}
+                
+    char exec[5] = "exec\0";
+    if(strcmp(cmd->u.word[0], exec) != 0)
+    {
+      execvp(cmd->u.word[0], cmd->u.word);
+      _exit(cmd->status);
+    }
+    else
+    {
+      execvp(cmd->u.word[1], cmd->u.word + 1);
+      _exit(cmd->status);
+    }
 
     // close the files if they overrode stdin/stdout
     if(cmd->input != NULL)

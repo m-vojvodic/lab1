@@ -25,7 +25,10 @@ operator stack and a command stack to properly parse the operator precedence
 and create the final tree structure. 
 
 Execution Model:
-This program implements the execution model by forking separate processes for each command that gets executed. &&, ||, and sequence (;) commands are running sequentially because they are conditional. Pipes (|) run in parallel if possible based on the given commands. 
+This program implements the execution model by forking separate processes for
+each command that gets executed. &&, ||, and sequence (;) commands are running 
+sequentially because they are conditional. Pipes (|) run in parallel if 
+possible based on the given commands. 
 
 -----------------------------------
 
@@ -44,4 +47,10 @@ documented during testing.
 
 TODO:
 - write free functions for command_stack, operator_stack, and command_stream
+  * free queue nodes
 - Use chdir() to implement execution of cd command
+- write code to execute graph (dependencies/no_dependencies)
+
+TO CHECK:
+- write code for main to create queues and dependency graph queues
+  * copy nodes instead of extra pointers

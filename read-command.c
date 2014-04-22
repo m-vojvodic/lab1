@@ -649,7 +649,7 @@ make_command_stream (int (*get_next_byte) (void *),
             }
             // cannot have a command be EOF
             if(current_token->type == ENDOFFILE || current_token->type == AND ||
-	       current_token->type == OR || current_token->type == PIPE) 
+               current_token->type == OR || current_token->type == PIPE) 
             {
               fprintf(stderr, "%d: Invalid syntax.\n", line_number);
               exit(1);
@@ -675,12 +675,12 @@ make_command_stream (int (*get_next_byte) (void *),
               current_token = current_token->next;
               line_number++;
             }
-	    
-	    // if it is a right parentheses, DO NOT process the sequence command
-	    if(current_token->type == RIGHT_PAREN)
-	    {
-	      break;
-	    }
+            
+            // if it is a right parentheses, DO NOT process the sequence command
+            if(current_token->type == RIGHT_PAREN)
+            {
+              break;
+            }
             
             // if end of file, process 
             if(current_token->type == ENDOFFILE)
@@ -735,7 +735,7 @@ make_command_stream (int (*get_next_byte) (void *),
               current_token = current_token->next;
               line_number++;
             }
-	    // end of file
+            // end of file
             if(current_token->type == ENDOFFILE)
             {
               // combine the last commands remaining on the stack
@@ -762,11 +762,11 @@ make_command_stream (int (*get_next_byte) (void *),
               exit(1);
             }
                 
-	    // if it is a right parentheses, DO NOT process the sequence command
-	    if(current_token->type == RIGHT_PAREN)
-	    {
-	      break;
-	    }
+            // if it is a right parentheses, DO NOT process the sequence command
+            if(current_token->type == RIGHT_PAREN)
+            {
+              break;
+            }
 
             // combine the last commands remaining on the stacks
             while(operators->top != NULL)
