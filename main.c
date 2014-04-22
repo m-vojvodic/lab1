@@ -120,7 +120,31 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
         d_graph->dependencies->tail = new_node;
       }
     }
+
+    // advance to next queue node
+    current = current->next;
   }
+
+  // for debugging
+  int i = 0;
+  fprintf(stderr, "NO DEPENDENCIES\n");
+  current = d_graph->no_dependencies->head;
+  while(current != NULL)
+  {
+    fprintf(stderr, "%d: Command type %d\n", i, current->g_node->cmd->type);
+    i++;
+  }
+
+  i = 0;
+  fprintf(stderr, "DEPENDENCIES\n");
+  current = d_graph->dependencies->head;
+  while(current != NULL)
+  {
+    fprintf(stderr, "%d: Command type %d\n", i, current->g_node->cmd->type);
+    i++;
+  }
+
+  return;
 }
 
 // Add command trees to the tail of the queue
