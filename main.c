@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "alloc.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include "command.h"
 #include "command-internals.h"
 
@@ -210,6 +213,81 @@ struct queue_node* dequeue(struct queue* q)
   q->head = q->head->next;
   q->head->prev = NULL;
   return node;
+}
+
+static void execute_no_dependencies(struct queue* no_dependencies)
+{
+	struct queue_node* current = no_dependencies->head;
+	while(current != NULL)
+	{
+		pid_t child_pid = fork();
+		if(child_pid < 0)
+		{
+			error(1, errno, "Failed to fork a new process in execute_no_dependencies.\n");
+		}
+		else if(child_pid == 0) // child process
+		{
+			// execute the command just like in LAB 1B
+			execute_command(current->g_node->cmd, false);
+		}
+		else // parent process
+		{
+			// set pid to show dependent processes this command is currently executing
+			current->g_node->pid = child_pid;
+		}
+
+		current = current->next;
+	}
+}
+
+static void execute_dependencies(struct queue* dependencies)
+{
+	struct queue_node* current = dependencies->head;
+	int i;
+	int count;
+	while(current != NULL)
+	{
+		loop:
+			count = current->g_node->num_before;
+			// check to make sure all dependencies ahve been run
+			for(i = 0; i < count; i++)
+			{
+				if(current->g_node->before[i]->pid == -1)
+				{
+					goto loop;
+				}
+			}
+
+			int eStatus;
+			// wait for all dependencies to finish
+			for(i = 0; i < count; i++)
+			{
+				waitpid(current->g_node->before[i]->pid, &eStatus, 0);
+			}
+
+			pid_t child_pid = fork();
+			if(child_pid < 0)
+			{
+				error(1, errno, "Failed to fork a new process in execute_dependencies.\n");
+			}
+			else if(child_pid == 0) // child process
+			{
+				// execute the command just like in LAB 1B
+				execute_command(current->g_node->cmd, false);
+			}
+			else // parent process
+			{
+				current->g_node->pid = child_pid;
+			}
+
+			current = current->next;
+	}
+}
+
+static void execute_graph(struct dependency_graph* d_graph)
+{
+	execute_no_dependencies(d_graph->no_dependencies);
+	execute_dependencies(d_graph->dependencies);
 }
 
 /************************************************************************************************/
