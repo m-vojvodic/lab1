@@ -13,7 +13,7 @@
 #include "command.h"
 #include "command-internals.h"
 
-/****************************************** LAB 1C  ******************************************/
+/********************************** LAB 1C  **********************************/
 
 static
 bool check_lists(char** a_list, char** b_list)
@@ -29,7 +29,9 @@ bool check_lists(char** a_list, char** b_list)
       {
         return true;
       }
+      j++;
     }
+    i++;
   }
   return false;
 }
@@ -37,8 +39,21 @@ bool check_lists(char** a_list, char** b_list)
 static
 void process_command(struct queue_node* q_node,struct command* cmd)
 {
+  // if here
+  if(q_node->num_read == q_node->alloc_read)
+  {
+    q_node->alloc_read *= 2;
+    q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_read*sizeof(char*));
+  }
+  if(q_node->num_write == q_node->alloc_write)
+  {
+    q_node->alloc_write *= 2;
+    q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_write*sizeof(char*));
+  }
+
   if(cmd->type == SIMPLE_COMMAND)
   {
+    
     if(cmd->output != NULL)
       q_node->write_list[q_node->num_write++] = cmd->output;
     if(cmd->input != NULL)
@@ -46,6 +61,12 @@ void process_command(struct queue_node* q_node,struct command* cmd)
     int i = 0;
     while(cmd->u.word[i] != NULL)
     {
+      // if here
+      if(q_node->num_read == q_node->alloc_read)
+      {
+	q_node->alloc_read *= 2;
+	q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_read*sizeof(char*));
+      }
       q_node->read_list[q_node->num_read++] = cmd->u.word[i];
       i++;
     }
@@ -92,7 +113,7 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
 
     // place in dependent or independent process queues
     // independent
-    if(current->g_node->before == NULL) 
+    if(current->g_node->before[0] == NULL) 
     {
       if(d_graph->no_dependencies->head == NULL && d_graph->no_dependencies->tail == NULL) // empty
       {
@@ -136,6 +157,7 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
   {
     fprintf(stderr, "%d: Command type %d\n", i, current->g_node->cmd->type);
     i++;
+    current = current->next;
   }
 
   i = 0;
@@ -145,6 +167,7 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
   {
     fprintf(stderr, "%d: Command type %d\n", i, current->g_node->cmd->type);
     i++;
+    current = current->next;
   }
 
   return;
@@ -174,13 +197,17 @@ struct queue_node* enqueue(struct queue* q, struct command* cmd)
 
   // initialize rest of new_node
   new_node->g_node->cmd = cmd;
-  new_node->g_node->before = NULL;
+  new_node->g_node->before = (struct graph_node**) checked_malloc(new_node->g_node->alloc_before * sizeof(struct graph_node*));
+  new_node->g_node->before[0] = NULL;
   new_node->g_node->num_before = 0;
+  new_node->g_node->alloc_before = 5;
   new_node->g_node->pid = -1;
-  new_node->read_list = NULL;
+  new_node->read_list = (char**) checked_malloc(new_node->alloc_read * sizeof(char*));
   new_node->num_read = 0;
-  new_node->write_list = NULL;
+  new_node->alloc_read = 5;
+  new_node->write_list = (char**) checked_malloc(new_node->alloc_write * sizeof(char*));
   new_node->num_write = 0;
+  new_node->alloc_write = 5;
 
   // create read_list and write_list for the new node
   process_command(new_node, cmd);
@@ -193,6 +220,13 @@ struct queue_node* enqueue(struct queue* q, struct command* cmd)
        check_lists(current->write_list, new_node->write_list) ||
        check_lists(current->write_list, new_node->read_list))
     {
+      // if here
+      if(new_node->g_node->num_before == new_node->g_node->alloc_before)
+      {
+	  new_node->g_node->alloc_before *= 2;
+	  new_node->g_node->before = checked_realloc(new_node->g_node->before, new_node->g_node->alloc_before*sizeof(char*));
+      }
+
       new_node->g_node->before[new_node->g_node->num_before++] = current->g_node; 
     }
     current = current->next;
@@ -229,14 +263,15 @@ static void execute_no_dependencies(struct queue* no_dependencies)
 		{
 			// execute the command just like in LAB 1B
 			execute_command(current->g_node->cmd, false);
+			exit(1);
 		}
 		else // parent process
 		{
 			// set pid to show dependent processes this command is currently executing
 			current->g_node->pid = child_pid;
-		}
 
-		current = current->next;
+		}
+			current = current->next;
 	}
 }
 
@@ -290,7 +325,7 @@ static void execute_graph(struct dependency_graph* d_graph)
 	execute_dependencies(d_graph->dependencies);
 }
 
-/************************************************************************************************/
+/********************************************************************************/
 
 static char const *program_name;
 static char const *script_name;
@@ -337,6 +372,34 @@ main (int argc, char **argv)
   command_stream_t command_stream =
     make_command_stream (get_next_byte, script_stream);
 
+
+  struct queue* command_queue = (struct queue*) checked_malloc(sizeof(struct queue));
+  struct dependency_graph* dgaf = (struct dependency_graph*) checked_malloc(sizeof(struct dependency_graph));
+  dgaf->no_dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
+  dgaf->no_dependencies->head = NULL;
+  dgaf->no_dependencies->tail = NULL;
+  dgaf->dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
+  dgaf->dependencies->head = NULL;
+  dgaf->dependencies->tail = NULL;
+
+  command_node_t current_command_node = command_stream->head;
+  command_node_t prev_command_node = NULL;
+
+  // if time_travel == gucci, turn up
+  if(time_travel)
+  {
+    while(current_command_node != NULL)
+    {
+      enqueue(command_queue, current_command_node->cmd);
+      prev_command_node = current_command_node;
+      current_command_node = current_command_node->next;
+    }
+    create_dependency_graphs(dgaf, command_queue);
+    execute_graph(dgaf);
+    return !prev_command_node ? 0 : command_status (prev_command_node->cmd);
+  }
+
+  // else process these basics
   command_t last_command = NULL;
   command_t command;
   while ((command = read_command_stream (command_stream)))
