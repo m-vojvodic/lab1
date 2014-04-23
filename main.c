@@ -58,7 +58,9 @@ void process_command(struct queue_node* q_node,struct command* cmd)
       q_node->write_list[q_node->num_write++] = cmd->output;
     if(cmd->input != NULL)
       q_node->read_list[q_node->num_read++] = cmd->input;
-    int i = 0;
+    // check all words but first (which is command)
+    // what about exec?
+    int i = 1;
     while(cmd->u.word[i] != NULL)
     {
       // if here
@@ -216,9 +218,9 @@ struct queue_node* enqueue(struct queue* q, struct command* cmd)
   struct queue_node* current = q->head;
   while(current != new_node)
   {
-    if(check_lists(current->read_list, new_node->write_list) ||
-       check_lists(current->write_list, new_node->write_list) ||
-       check_lists(current->write_list, new_node->read_list))
+    if(check_lists(current->read_list, new_node->write_list) ||  // RAW
+       check_lists(current->write_list, new_node->write_list) || // WAW
+       check_lists(current->write_list, new_node->read_list))    // WAR
     {
       // if here
       if(new_node->g_node->num_before == new_node->g_node->alloc_before)
@@ -374,6 +376,9 @@ main (int argc, char **argv)
 
 
   struct queue* command_queue = (struct queue*) checked_malloc(sizeof(struct queue));
+  command_queue->head = NULL;
+  command_queue->tail = NULL;
+
   struct dependency_graph* dgaf = (struct dependency_graph*) checked_malloc(sizeof(struct dependency_graph));
   dgaf->no_dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
   dgaf->no_dependencies->head = NULL;
