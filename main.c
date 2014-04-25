@@ -43,36 +43,34 @@ void process_command(struct queue_node* q_node,struct command* cmd)
   if(q_node->num_read == q_node->alloc_read)
   {
     q_node->alloc_read *= 2;
-    q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_read*sizeof(char*));
+    q_node->read_list = (char**)checked_realloc(q_node->read_list, q_node->alloc_read * sizeof(char*));
   }
   if(q_node->num_write == q_node->alloc_write)
   {
     q_node->alloc_write *= 2;
-    q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_write*sizeof(char*));
+    q_node->write_list = (char**)checked_realloc(q_node->write_list, q_node->alloc_write * sizeof(char*));
   }
 
   if(cmd->type == SIMPLE_COMMAND)
   {
-    
     if(cmd->output != NULL)
       q_node->write_list[q_node->num_write++] = cmd->output;
     if(cmd->input != NULL)
       q_node->read_list[q_node->num_read++] = cmd->input;
     // check all words but first (which is command)
-    // what about exec?
+    // what about exec/flags
     int i = 1;
     while(cmd->u.word[i] != NULL)
     {
       // if here
       if(q_node->num_read == q_node->alloc_read)
       {
-	q_node->alloc_read *= 2;
-	q_node->read_list = checked_realloc(q_node->read_list, q_node->alloc_read*sizeof(char*));
+        q_node->alloc_read *= 2;
+        q_node->read_list = (char**)checked_realloc(q_node->read_list, q_node->alloc_read * sizeof(char*));
       }
       q_node->read_list[q_node->num_read++] = cmd->u.word[i];
       i++;
     }
-    q_node->read_list[q_node->num_read] = NULL;
   }
   else if(cmd->type == SUBSHELL_COMMAND)
   {
@@ -91,10 +89,12 @@ void process_command(struct queue_node* q_node,struct command* cmd)
 
 void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cmd_queue)
 {
+  // if only ENDOFFILE, return
   if(cmd_queue->head == NULL)
   {
-    fprintf(stderr, "Error, must pass in cmd_queue for dependency graph\n");
-    exit(1);
+    d_graph->no_dependencies = NULL;
+    d_graph->dependencies = NULL;
+    return;
   }
   
   struct queue_node* current = cmd_queue->head;
@@ -152,6 +152,7 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
   }
 
   // for debugging
+  /*
   int i = 0;
   fprintf(stderr, "NO DEPENDENCIES\n");
   current = d_graph->no_dependencies->head;
@@ -171,13 +172,17 @@ void create_dependency_graphs(struct dependency_graph* d_graph, struct queue* cm
     i++;
     current = current->next;
   }
-
+  */
   return;
 }
 
 // Add command trees to the tail of the queue
 struct queue_node* enqueue(struct queue* q, struct command* cmd)
 {
+  // if the command type is EOF, return
+  if(cmd == NULL)
+    return NULL;
+
   struct queue_node* new_node = (struct queue_node*) checked_malloc(sizeof(struct queue_node));
 
   if(q->tail == NULL && q->head == NULL) // empty queue
@@ -199,17 +204,17 @@ struct queue_node* enqueue(struct queue* q, struct command* cmd)
 
   // initialize rest of new_node
   new_node->g_node->cmd = cmd;
+  new_node->g_node->alloc_before = 5;
   new_node->g_node->before = (struct graph_node**) checked_malloc(new_node->g_node->alloc_before * sizeof(struct graph_node*));
   new_node->g_node->before[0] = NULL;
   new_node->g_node->num_before = 0;
-  new_node->g_node->alloc_before = 5;
   new_node->g_node->pid = -1;
+  new_node->alloc_read = 5;
   new_node->read_list = (char**) checked_malloc(new_node->alloc_read * sizeof(char*));
   new_node->num_read = 0;
-  new_node->alloc_read = 5;
+  new_node->alloc_write = 5;
   new_node->write_list = (char**) checked_malloc(new_node->alloc_write * sizeof(char*));
   new_node->num_write = 0;
-  new_node->alloc_write = 5;
 
   // create read_list and write_list for the new node
   process_command(new_node, cmd);
@@ -225,8 +230,8 @@ struct queue_node* enqueue(struct queue* q, struct command* cmd)
       // if here
       if(new_node->g_node->num_before == new_node->g_node->alloc_before)
       {
-	  new_node->g_node->alloc_before *= 2;
-	  new_node->g_node->before = checked_realloc(new_node->g_node->before, new_node->g_node->alloc_before*sizeof(char*));
+        (new_node->g_node->alloc_before) *= 2;
+        new_node->g_node->before = (struct graph_node**)checked_realloc(new_node->g_node->before, new_node->g_node->alloc_before * sizeof(struct graph_node*));
       }
 
       new_node->g_node->before[new_node->g_node->num_before++] = current->g_node; 
@@ -253,78 +258,83 @@ struct queue_node* dequeue(struct queue* q)
 
 static void execute_no_dependencies(struct queue* no_dependencies)
 {
-	struct queue_node* current = no_dependencies->head;
-	while(current != NULL)
-	{
-		pid_t child_pid = fork();
-		if(child_pid < 0)
-		{
-			error(1, errno, "Failed to fork a new process in execute_no_dependencies.\n");
-		}
-		else if(child_pid == 0) // child process
-		{
-			// execute the command just like in LAB 1B
-			execute_command(current->g_node->cmd, false);
-			exit(1);
-		}
-		else // parent process
-		{
-			// set pid to show dependent processes this command is currently executing
-			current->g_node->pid = child_pid;
-
-		}
-			current = current->next;
-	}
+  struct queue_node* current = no_dependencies->head;
+  while(current != NULL)
+  {
+    pid_t child_pid = fork();
+    if(child_pid < 0)
+    {
+      error(1, errno, "Failed to fork a new process in execute_no_dependencies.\n");
+    }
+    else if(child_pid == 0) // child process
+    {
+      // execute the command just like in LAB 1B
+      execute_command(current->g_node->cmd, false);
+      exit(1);
+    }
+    else // parent process
+    {
+      // set pid to show dependent processes this command is currently executing
+      current->g_node->pid = child_pid;  
+    }
+    current = current->next;
+  }
 }
 
 static void execute_dependencies(struct queue* dependencies)
 {
-	struct queue_node* current = dependencies->head;
-	int i;
-	int count;
-	while(current != NULL)
-	{
-		loop:
-			count = current->g_node->num_before;
-			// check to make sure all dependencies ahve been run
-			for(i = 0; i < count; i++)
-			{
-				if(current->g_node->before[i]->pid == -1)
-				{
-					goto loop;
-				}
-			}
+  struct queue_node* current = dependencies->head;
+  int i;
+  int count;
+  while(current != NULL)
+  {
+  loop:
+    count = current->g_node->num_before;
+    // check to make sure all dependencies ahve been run
+    for(i = 0; i < count; i++)
+    {
+      if(current->g_node->before[i]->pid == -1)
+      {
+        goto loop;
+      }
+    }
+    
+    int eStatus;
+    // wait for all dependencies to finish
+    for(i = 0; i < count; i++)
+    {
+      waitpid(current->g_node->before[i]->pid, &eStatus, 0);
+      current->g_node->num_before--;
+    }
 
-			int eStatus;
-			// wait for all dependencies to finish
-			for(i = 0; i < count; i++)
-			{
-				waitpid(current->g_node->before[i]->pid, &eStatus, 0);
-			}
-
-			pid_t child_pid = fork();
-			if(child_pid < 0)
-			{
-				error(1, errno, "Failed to fork a new process in execute_dependencies.\n");
-			}
-			else if(child_pid == 0) // child process
-			{
-				// execute the command just like in LAB 1B
-				execute_command(current->g_node->cmd, false);
-			}
-			else // parent process
-			{
-				current->g_node->pid = child_pid;
-			}
-
-			current = current->next;
-	}
+    pid_t child_pid = fork();
+    if(child_pid < 0)
+    {
+      error(1, errno, "Failed to fork a new process in execute_dependencies.\n");
+    }
+    else if(child_pid == 0) // child process
+    {
+      // execute the command just like in LAB 1B
+      execute_command(current->g_node->cmd, false);
+      exit(1);
+    }
+    else // parent process
+    {
+      current->g_node->pid = child_pid;
+    }
+    
+    current = current->next;
+  }
 }
 
 static void execute_graph(struct dependency_graph* d_graph)
 {
-	execute_no_dependencies(d_graph->no_dependencies);
-	execute_dependencies(d_graph->dependencies);
+  // empty script or just comments
+  if(d_graph->no_dependencies == NULL && d_graph->dependencies == NULL)
+    return;
+
+  execute_no_dependencies(d_graph->no_dependencies);
+  execute_dependencies(d_graph->dependencies);
 }
 
 /********************************************************************************/
@@ -374,25 +384,28 @@ main (int argc, char **argv)
   command_stream_t command_stream =
     make_command_stream (get_next_byte, script_stream);
 
-
-  struct queue* command_queue = (struct queue*) checked_malloc(sizeof(struct queue));
-  command_queue->head = NULL;
-  command_queue->tail = NULL;
-
-  struct dependency_graph* dgaf = (struct dependency_graph*) checked_malloc(sizeof(struct dependency_graph));
-  dgaf->no_dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
-  dgaf->no_dependencies->head = NULL;
-  dgaf->no_dependencies->tail = NULL;
-  dgaf->dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
-  dgaf->dependencies->head = NULL;
-  dgaf->dependencies->tail = NULL;
-
-  command_node_t current_command_node = command_stream->head;
-  command_node_t prev_command_node = NULL;
-
-  // if time_travel == gucci, turn up
+  // if time_travel
   if(time_travel)
   {
+    // case: EOF only
+    if(command_stream->head == NULL)
+      return 0;
+
+    struct queue* command_queue = (struct queue*) checked_malloc(sizeof(struct queue));
+    command_queue->head = NULL;
+    command_queue->tail = NULL;
+    
+    struct dependency_graph* dgaf = (struct dependency_graph*) checked_malloc(sizeof(struct dependency_graph));
+    dgaf->no_dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
+    dgaf->no_dependencies->head = NULL;
+    dgaf->no_dependencies->tail = NULL;
+    dgaf->dependencies = (struct queue*) checked_malloc(sizeof(struct queue));
+    dgaf->dependencies->head = NULL;
+    dgaf->dependencies->tail = NULL;
+    
+    command_node_t current_command_node = command_stream->head;
+    command_node_t prev_command_node = NULL;
+    
     while(current_command_node != NULL)
     {
       enqueue(command_queue, current_command_node->cmd);
@@ -404,7 +417,7 @@ main (int argc, char **argv)
     return !prev_command_node ? 0 : command_status (prev_command_node->cmd);
   }
 
-  // else process these basics
+  // not time travel
   command_t last_command = NULL;
   command_t command;
   while ((command = read_command_stream (command_stream)))
@@ -471,7 +484,8 @@ main (int argc, char **argv)
       }
       current = current->next;
     }
-    free_token_stream(tokens); */
-        fclose(script_stream);
-        return 0;
+    free_token_stream(tokens);
+  fclose(script_stream);
+  return 0;
+  */
 }

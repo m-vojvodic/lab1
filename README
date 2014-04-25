@@ -49,11 +49,3 @@ TODO:
 - write free functions for command_stack, operator_stack, and command_stream
   * free queue nodes
 - Use chdir() to implement execution of cd command
-- write code to execute graph (dependencies/no_dependencies)
-  * execute_dependencies
-  * execute_no_dependencies
-- implement multiple dependency processing
-
-TO CHECK:
-- write code for main to create queues and dependency graph queues
-  * copy nodes instead of extra pointers
