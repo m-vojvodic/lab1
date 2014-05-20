@@ -40,6 +40,8 @@ and every command node. The reason for this limitation is that the main
 function is not to be altered. This means that a free statement calling an
 auxiliary function to free the memory for the structure could not be called.
 
+Another limitation of the program is that it does not implement the "cd" command using the chdir() function call. Instead it is implemented using execvp() so the child process which executes the "cd" finishes and dies. Therefore, the parent (main) process never changes directory so the result does not show up.
+
 Other than this, there are no other limitations which have been encountered and
 documented during testing.
 

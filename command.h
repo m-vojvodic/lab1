@@ -7,7 +7,6 @@ typedef struct command_stream* command_stream_t;
 typedef struct token* token_t;
 typedef struct token_stream* token_stream_t;
 typedef struct command_node* command_node_t;
-typedef struct command_stream* command_stream_t;
 typedef struct command_stack_node* command_stack_node_t;
 typedef struct command_stack* command_stack_t;
 typedef struct operator_stack_node* operator_stack_node_t;
